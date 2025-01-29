@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LlmController } from './llm.controller';
+import { LLMController } from '../interface/http/llm.controller';
 
 describe('LlmController', () => {
-  let controller: LlmController;
+  let controller: LLMController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [LlmController],
+      controllers: [LLMController],
     }).compile();
 
-    controller = module.get<LlmController>(LlmController);
+    controller = module.get<LLMController>(LLMController);
   });
 
   it('should be defined', () => {
