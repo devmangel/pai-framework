@@ -9,7 +9,7 @@ import {
   ValidationPipe,
   UsePipes,
 } from '@nestjs/common';
-import { ToolService } from '../../application/services/tool.service';
+import { ToolService } from '../../application/services/tool-application.service';
 import { ToolType, ToolCategory } from '../../domain/enums/tool-type.enum';
 import { ToolContext, ToolResult } from '../../infrastructure/tools/base.tool';
 
