@@ -11,6 +11,7 @@ export interface CreateTaskDto {
   parentId?: string;
   dependencies?: string[];
   metadata?: Record<string, any>;
+  dueDate?: string;
 }
 
 export interface UpdateTaskDto {
@@ -18,6 +19,7 @@ export interface UpdateTaskDto {
   description?: string;
   priority?: TaskPriority;
   metadata?: Record<string, any>;
+  dueDate?: string;
 }
 
 export interface TaskService {

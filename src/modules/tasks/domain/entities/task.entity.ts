@@ -1,187 +1,264 @@
-import { Agent } from '../../../agents/domain/entities/agent.entity';
+import { v4 as uuidv4 } from 'uuid';
 import { TaskStatus } from '../enums/task-status.enum';
 import { TaskPriority } from '../enums/task-priority.enum';
 import { TaskResult } from '../value-objects/task-result.vo';
+import { Agent } from '../../../agents/domain/entities/agent.entity';
 
 export class Task {
-  constructor(
+  private constructor(
     private readonly id: string,
     private title: string,
     private description: string,
     private status: TaskStatus,
     private priority: TaskPriority,
-    private assignedTo?: Agent,
-    private result?: TaskResult,
-    private readonly createdAt: Date = new Date(),
-    private updatedAt: Date = new Date(),
-    private completedAt?: Date,
-    private readonly parentId?: string,
-    private dependencies: string[] = [],
-    private metadata: Record<string, any> = {},
-  ) {
-    this.validate();
-  }
+    private assignedAgent: Agent | null,
+    private parentId: string | null,
+    private dependencies: string[],
+    private metadata: Record<string, any>,
+    private result: TaskResult | null,
+    private readonly createdAt: Date,
+    private updatedAt: Date,
+    private startedAt: Date | null,
+    private completedAt: Date | null,
+    private dueDate: Date | null
+  ) {}
 
-  public validate(): void {
-    if (!this.id || typeof this.id !== 'string') {
-      throw new Error('Task ID must be a non-empty string');
-    }
-    if (!this.title || typeof this.title !== 'string') {
-      throw new Error('Task title must be a non-empty string');
-    }
-    if (!Object.values(TaskStatus).includes(this.status)) {
-      throw new Error('Invalid task status');
-    }
-    if (!Object.values(TaskPriority).includes(this.priority)) {
-      throw new Error('Invalid task priority');
-    }
+  static create(
+    title: string,
+    description: string,
+    priority: TaskPriority,
+    parentId: string | null = null,
+    dependencies: string[] = [],
+    metadata: Record<string, any> = {},
+    dueDate: Date | null = null
+  ): Task {
+    const now = new Date();
+    return new Task(
+      uuidv4(),
+      title,
+      description,
+      TaskStatus.PENDING,
+      priority,
+      null,
+      parentId,
+      dependencies,
+      metadata,
+      null,
+      now,
+      now,
+      null,
+      null,
+      dueDate
+    );
   }
 
   // Getters
-  public getId(): string {
+  getId(): string {
     return this.id;
   }
 
-  public getTitle(): string {
+  getTitle(): string {
     return this.title;
   }
 
-  public getDescription(): string {
+  getDescription(): string {
     return this.description;
   }
 
-  public getStatus(): TaskStatus {
+  getStatus(): TaskStatus {
     return this.status;
   }
 
-  public getPriority(): TaskPriority {
+  getPriority(): TaskPriority {
     return this.priority;
   }
 
-  public getAssignedAgent(): Agent | undefined {
-    return this.assignedTo;
+  getAssignedAgent(): Agent | null {
+    return this.assignedAgent;
   }
 
-  public getResult(): TaskResult | undefined {
-    return this.result;
-  }
-
-  public getCreatedAt(): Date {
-    return this.createdAt;
-  }
-
-  public getUpdatedAt(): Date {
-    return this.updatedAt;
-  }
-
-  public getCompletedAt(): Date | undefined {
-    return this.completedAt;
-  }
-
-  public getParentId(): string | undefined {
+  getParentId(): string | null {
     return this.parentId;
   }
 
-  public getDependencies(): string[] {
+  getDependencies(): string[] {
     return [...this.dependencies];
   }
 
-  public getMetadata(): Record<string, any> {
+  getMetadata(): Record<string, any> {
     return { ...this.metadata };
   }
 
-  // Setters and state changes
-  public updateTitle(title: string): void {
-    if (!title || typeof title !== 'string') {
-      throw new Error('Task title must be a non-empty string');
+  getResult(): TaskResult | null {
+    return this.result;
+  }
+
+  getCreatedAt(): Date {
+    return this.createdAt;
+  }
+
+  getUpdatedAt(): Date {
+    return this.updatedAt;
+  }
+
+  getStartedAt(): Date | null {
+    return this.startedAt;
+  }
+
+  getCompletedAt(): Date | null {
+    return this.completedAt;
+  }
+
+  getDueDate(): Date | null {
+    return this.dueDate;
+  }
+
+  // State changes
+  assignTo(agent: Agent): void {
+    this.assignedAgent = agent;
+    this.updateTimestamp();
+  }
+
+  unassign(): void {
+    this.assignedAgent = null;
+    this.updateTimestamp();
+  }
+
+  start(agent: Agent): void {
+    if (this.status !== TaskStatus.PENDING) {
+      throw new Error('Task can only be started from PENDING state');
     }
-    this.title = title;
-    this.updatedAt = new Date();
+    this.status = TaskStatus.IN_PROGRESS;
+    this.assignedAgent = agent;
+    this.startedAt = new Date();
+    this.updateTimestamp();
   }
 
-  public updateDescription(description: string): void {
-    this.description = description;
-    this.updatedAt = new Date();
-  }
-
-  public updateStatus(status: TaskStatus): void {
-    this.status = status;
-    this.updatedAt = new Date();
-    
-    if (status === TaskStatus.COMPLETED) {
-      this.completedAt = new Date();
+  complete(result: TaskResult): void {
+    if (this.status !== TaskStatus.IN_PROGRESS) {
+      throw new Error('Task can only be completed from IN_PROGRESS state');
     }
-  }
-
-  public updatePriority(priority: TaskPriority): void {
-    this.priority = priority;
-    this.updatedAt = new Date();
-  }
-
-  public assignTo(agent: Agent): void {
-    this.assignedTo = agent;
-    this.updatedAt = new Date();
-  }
-
-  public unassign(): void {
-    this.assignedTo = undefined;
-    this.updatedAt = new Date();
-  }
-
-  public setResult(result: TaskResult): void {
+    this.status = TaskStatus.COMPLETED;
     this.result = result;
-    this.updatedAt = new Date();
+    this.completedAt = new Date();
+    this.updateTimestamp();
   }
 
-  public updateMetadata(metadata: Record<string, any>): void {
+  fail(error: string): void {
+    if (this.status !== TaskStatus.IN_PROGRESS) {
+      throw new Error('Task can only fail from IN_PROGRESS state');
+    }
+    this.status = TaskStatus.FAILED;
+    this.result = TaskResult.createError(error);
+    this.updateTimestamp();
+  }
+
+  block(reason: string): void {
+    if (this.status === TaskStatus.COMPLETED) {
+      throw new Error('Cannot block a completed task');
+    }
+    this.status = TaskStatus.BLOCKED;
+    this.metadata = { ...this.metadata, blockReason: reason };
+    this.updateTimestamp();
+  }
+
+  unblock(): void {
+    if (this.status !== TaskStatus.BLOCKED) {
+      throw new Error('Task is not blocked');
+    }
+    this.status = this.startedAt ? TaskStatus.IN_PROGRESS : TaskStatus.PENDING;
+    const { blockReason, ...rest } = this.metadata;
+    this.metadata = rest;
+    this.updateTimestamp();
+  }
+
+  cancel(reason: string): void {
+    if (this.status === TaskStatus.COMPLETED) {
+      throw new Error('Cannot cancel a completed task');
+    }
+    this.status = TaskStatus.CANCELLED;
+    this.metadata = { ...this.metadata, cancelReason: reason };
+    this.updateTimestamp();
+  }
+
+  addDependency(taskId: string): void {
+    if (!this.dependencies.includes(taskId)) {
+      this.dependencies.push(taskId);
+      this.updateTimestamp();
+    }
+  }
+
+  removeDependency(taskId: string): void {
+    this.dependencies = this.dependencies.filter(id => id !== taskId);
+    this.updateTimestamp();
+  }
+
+  updateTitle(title: string): void {
+    this.title = title;
+    this.updateTimestamp();
+  }
+
+  updateDescription(description: string): void {
+    this.description = description;
+    this.updateTimestamp();
+  }
+
+  updatePriority(priority: TaskPriority): void {
+    this.priority = priority;
+    this.updateTimestamp();
+  }
+
+  updateDueDate(dueDate: Date | null): void {
+    this.dueDate = dueDate;
+    this.updateTimestamp();
+  }
+
+  updateMetadata(metadata: Record<string, any>): void {
     this.metadata = { ...this.metadata, ...metadata };
+    this.updateTimestamp();
+  }
+
+  private updateTimestamp(): void {
     this.updatedAt = new Date();
   }
 
-  // Business logic
-  public isAssigned(): boolean {
-    return !!this.assignedTo;
-  }
-
-  public isCompleted(): boolean {
-    return this.status === TaskStatus.COMPLETED;
-  }
-
-  public isInProgress(): boolean {
-    return this.status === TaskStatus.IN_PROGRESS;
-  }
-
-  public hasResult(): boolean {
-    return !!this.result;
-  }
-
-  public hasDependencies(): boolean {
-    return this.dependencies.length > 0;
-  }
-
-  public isBlocked(): boolean {
-    return this.status === TaskStatus.BLOCKED;
-  }
-
-  public isHighPriority(): boolean {
-    return this.priority === TaskPriority.HIGH;
-  }
-
-  public toJSON() {
+  toJSON(): Record<string, any> {
     return {
       id: this.id,
       title: this.title,
       description: this.description,
       status: this.status,
       priority: this.priority,
-      assignedTo: this.assignedTo?.toJSON(),
-      result: this.result?.toJSON(),
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      completedAt: this.completedAt,
+      assignedAgent: this.assignedAgent?.getId(),
       parentId: this.parentId,
       dependencies: this.dependencies,
       metadata: this.metadata,
+      result: this.result?.toJSON(),
+      createdAt: this.createdAt.toISOString(),
+      updatedAt: this.updatedAt.toISOString(),
+      startedAt: this.startedAt?.toISOString(),
+      completedAt: this.completedAt?.toISOString(),
+      dueDate: this.dueDate?.toISOString(),
     };
+  }
+
+  static fromJSON(json: Record<string, any>): Task {
+    return new Task(
+      json.id,
+      json.title,
+      json.description,
+      json.status as TaskStatus,
+      json.priority as TaskPriority,
+      null, // Agent will need to be rehydrated separately
+      json.parentId,
+      json.dependencies,
+      json.metadata,
+      json.result ? TaskResult.fromJSON(json.result) : null,
+      new Date(json.createdAt),
+      new Date(json.updatedAt),
+      json.startedAt ? new Date(json.startedAt) : null,
+      json.completedAt ? new Date(json.completedAt) : null,
+      json.dueDate ? new Date(json.dueDate) : null
+    );
   }
 }
