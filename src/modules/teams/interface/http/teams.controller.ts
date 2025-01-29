@@ -8,6 +8,8 @@ import {
   Param,
   HttpException,
   HttpStatus,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { TeamService } from '../../application/services/team.service';
 import { CreateTeamDto } from '../../application/dtos/create-team.dto';
@@ -22,6 +24,7 @@ import {
 } from '../../application/dtos/channel.dto';
 
 @Controller('teams')
+@UsePipes(new ValidationPipe({ transform: true }))
 export class TeamsController {
   constructor(private readonly teamService: TeamService) {}
 

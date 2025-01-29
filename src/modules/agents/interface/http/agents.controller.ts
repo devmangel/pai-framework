@@ -12,6 +12,8 @@ import {
   Inject,
   UseInterceptors,
   ClassSerializerInterceptor,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CreateAgentUseCase } from '../../application/use-cases/create-agent.use-case';
 import { AgentRepository, DuplicateAgentError, AgentNotFoundError } from '../../domain/ports/agent.repository';
@@ -21,6 +23,7 @@ import { AgentResponseDto, AgentListResponseDto, DeleteAgentResponseDto } from '
 
 @Controller('agents')
 @UseInterceptors(ClassSerializerInterceptor)
+@UsePipes(new ValidationPipe({ transform: true}))
 export class AgentsController {
   constructor(
     @Inject('AgentRepository')

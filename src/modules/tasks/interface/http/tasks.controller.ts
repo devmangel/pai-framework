@@ -10,6 +10,8 @@ import {
   Inject,
   HttpStatus,
   HttpCode,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { TaskService } from '../../domain/ports/task.service';
 import { CreateTaskDto } from './dtos/create-task.dto';
@@ -19,6 +21,7 @@ import { TaskPriority } from '../../domain/enums/task-priority.enum';
 import { TaskResult } from '../../domain/value-objects/task-result.vo';
 
 @Controller('tasks')
+@UsePipes(new ValidationPipe({ transform: true }))
 export class TasksController {
   constructor(
     @Inject('TaskService')
