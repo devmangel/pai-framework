@@ -351,8 +351,3 @@ El módulo de Agentes proporciona una base sólida para la gestión de agentes a
    - Persistencia distribuida
    - Operaciones asíncronas
 
-### Próximos Pasos
-1. Implementar sistema de eventos
-2. Añadir más capacidades predefinidas
-3. Mejorar la gestión de memoria
-4. Integrar con el módulo de tareas
