@@ -356,9 +356,8 @@ export class DynamoDBTaskRepository implements TaskRepository {
     const tasks = await this.findAll();
 
     tasks.forEach(task => {
-      const agent = task.getAssignedAgent();
-      if (agent) {
-        const agentId = agent.getId();
+      const agentId = task.getAssignedAgent()?.getId();
+      if (agentId && typeof agentId === 'string') {
         counts[agentId] = (counts[agentId] || 0) + 1;
       }
     });
