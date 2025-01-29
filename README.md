@@ -155,7 +155,7 @@ NODE_ENV=development
 
 # Database
 DYNAMODB_ENDPOINT=http://localhost:8000
-AWS_REGION=us-east-1
+AWS_REGION=us-west-2
 AWS_ACCESS_KEY_ID=local
 AWS_SECRET_ACCESS_KEY=local
 
