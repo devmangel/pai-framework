@@ -1,124 +1,211 @@
 # AgentsAI Framework
 
-A TypeScript/NestJS implementation of an AI agents framework, inspired by CrewAI, designed for building and managing autonomous AI agents that can collaborate, communicate, and accomplish complex tasks.
+Un framework TypeScript/NestJS para la construcción y gestión de agentes de IA autónomos, inspirado en CrewAI, diseñado para permitir la colaboración, comunicación y ejecución de tareas complejas entre agentes.
 
-## Project Structure
+## Estado del Proyecto
+
+El proyecto implementa una arquitectura hexagonal robusta con los siguientes módulos principales:
+
+### Módulos Implementados ✅
+
+- **Agents**: Sistema base de agentes con persistencia en DynamoDB
+- **LLM**: Integración con proveedores de LLM (OpenAI) y sistema de caché
+- **Tasks**: Gestión de tareas, dependencias y flujos de trabajo
+- **Teams**: Colaboración y comunicación entre agentes
+- **Tools**: Sistema extensible de herramientas con caché integrado
+
+### En Desarrollo 🚧
+
+- Sistema de memoria para agentes
+- Integración con más proveedores LLM
+- Sistema de plugins
+- WebSocket para comunicación en tiempo real
+- Integración con WhatsApp
+- Documentación OpenAPI
+
+## Arquitectura
+
+El proyecto sigue una arquitectura hexagonal (ports and adapters) con una clara separación de responsabilidades:
 
 ```
 src/
 ├── modules/
-│   ├── agents/              # Agent management module
-│   │   ├── domain/         # Domain entities, value objects, and ports
-│   │   ├── application/    # Use cases and application services
-│   │   ├── infrastructure/ # Repository implementations and external services
-│   │   └── interface/      # Controllers, DTOs, and presenters
-│   ├── llm/                # LLM integration module
-│   ├── tasks/              # Task management module
-│   ├── teams/              # Team coordination module
-│   └── tools/              # Tools and capabilities module
-├── common/                 # Shared utilities and pipes
-├── config/                 # Configuration management
-└── main.ts                # Application entry point
+│   ├── agents/              # Gestión de agentes
+│   │   ├── domain/         # Entidades, value objects y puertos
+│   │   │   ├── entities/   # Agent, AgentConfig
+│   │   │   ├── ports/      # Repositorios e interfaces
+│   │   │   └── vo/         # Value Objects
+│   │   ├── application/    # Casos de uso y servicios
+│   │   ├── infrastructure/ # Implementaciones y servicios externos
+│   │   └── interface/      # Controladores y DTOs
+│   │
+│   ├── llm/                # Integración con modelos de lenguaje
+│   │   ├── domain/        # Abstracciones de LLM
+│   │   ├── infrastructure/# Implementaciones (OpenAI, etc.)
+│   │   └── interface/     # API REST para LLM
+│   │
+│   ├── tasks/              # Gestión de tareas
+│   │   ├── domain/        # Task, TaskStatus, TaskPriority
+│   │   ├── application/   # Workflow, TaskExecution
+│   │   └── infrastructure/# TaskRepository, TaskScheduler
+│   │
+│   ├── teams/              # Coordinación de equipos
+│   │   ├── domain/        # Team, TeamMember, Channel
+│   │   ├── application/   # TeamManagement, Communication
+│   │   └── interface/     # TeamController, WebSocket
+│   │
+│   └── tools/              # Herramientas y capacidades
+│       ├── domain/        # Tool, ToolType
+│       ├── infrastructure/# Implementaciones de tools
+│       └── interface/     # ToolController
+│
+├── common/                 # Utilidades compartidas
+├── config/                 # Gestión de configuración
+└── main.ts                # Punto de entrada
 ```
 
-## Features
+### Patrones de Diseño Implementados
 
-- 🤖 Agent Management
-- 🤝 Team Coordination
-- 📋 Task Management
-- 🔧 Tool Integration
-- 🧠 LLM Provider Support
-- 🔄 Real-time Communication
-- 📊 Performance Monitoring
+- **Domain-Driven Design**: Entidades ricas y value objects
+- **Repository Pattern**: Abstracción de persistencia
+- **Factory Pattern**: Creación de objetos complejos
+- **Strategy Pattern**: Comportamientos intercambiables
+- **Observer Pattern**: Eventos y notificaciones
+- **Decorator Pattern**: Aspectos transversales
 
-## Prerequisites
+## Documentación
 
-- Node.js (v18 or later)
-- npm or yarn
-- DynamoDB Local (for development)
-- Redis (optional, for caching)
+Cada módulo cuenta con documentación detallada:
 
-## Setup
+- [Módulo de Agentes](docs/modules/agents.md)
+- [Módulo LLM](docs/modules/llm.md)
+- [Módulo de Tareas](docs/modules/tasks.md)
+- [Módulo de Equipos](docs/modules/teams.md)
+- [Módulo de Herramientas](docs/modules/tools.md)
 
-1. Clone the repository:
+## Requisitos
+
+- Node.js (v18 o superior)
+- npm o yarn
+- DynamoDB Local (desarrollo)
+- Redis (opcional, para caché)
+
+## Configuración
+
+1. Clonar el repositorio:
    ```bash
    git clone <repository-url>
    cd agentsAI
    ```
 
-2. Install dependencies:
+2. Instalar dependencias:
    ```bash
    npm install
    ```
 
-3. Set up environment variables:
+3. Configurar variables de entorno:
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
+   # Editar .env con tu configuración
    ```
 
-4. Start DynamoDB Local:
+4. Iniciar DynamoDB Local:
    ```bash
    docker run -p 8000:8000 amazon/dynamodb-local
    ```
 
-5. Run the application:
+5. Ejecutar la aplicación:
    ```bash
-   # Development
+   # Desarrollo
    npm run start:dev
 
-   # Production
+   # Producción
    npm run build
    npm run start:prod
    ```
 
-## Development
+## Desarrollo
 
-### Code Style
+### Estándares de Código
 
-- Follow NestJS best practices
-- Use hexagonal architecture principles
-- Write unit tests for domain logic
-- Document public APIs
+- Seguir las mejores prácticas de NestJS
+- Implementar arquitectura hexagonal
+- Escribir pruebas unitarias para lógica de dominio
+- Documentar APIs públicas
 
 ### Testing
 
 ```bash
-# Unit tests
+# Pruebas unitarias
 npm run test
 
-# E2E tests
+# Pruebas E2E
 npm run test:e2e
 
-# Test coverage
+# Cobertura
 npm run test:cov
 ```
 
-### API Documentation
+## Variables de Entorno
 
-The API documentation is available at `/api/docs` when running in development mode.
+```env
+# Server
+PORT=3000
+NODE_ENV=development
 
-## Architecture
+# Database
+DYNAMODB_ENDPOINT=http://localhost:8000
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=local
+AWS_SECRET_ACCESS_KEY=local
 
-This project follows hexagonal architecture (ports and adapters) principles:
+# LLM
+OPENAI_API_KEY=your-api-key
+DEFAULT_MODEL=gpt-4
+CACHE_TTL=3600
 
-- **Domain Layer**: Core business logic and entities
-- **Application Layer**: Use cases and application services
-- **Infrastructure Layer**: External services and implementations
-- **Interface Layer**: Controllers and DTOs
+# Redis (opcional)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
 
-## Contributing
+## Próximos Pasos
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+### Fase 1: Mejoras Core
+- [ ] Sistema de memoria para agentes
+- [ ] Integración con Claude y Gemini
+- [ ] Sistema de plugins extensible
 
-## Environment Variables
+### Fase 2: Comunicación
+- [ ] WebSocket para tiempo real
+- [ ] Integración con WhatsApp
+- [ ] Sistema de notificaciones
 
-See `.env.example` for all available configuration options.
+### Fase 3: Documentación y Tooling
+- [ ] Documentación OpenAPI completa
+- [ ] CLI para gestión de agentes
+- [ ] Dashboard de administración
 
-## License
+### Fase 4: Escalabilidad
+- [ ] Soporte para múltiples bases de datos
+- [ ] Sistema de colas distribuido
+- [ ] Monitoreo y telemetría
+
+## Contribuir
+
+1. Fork del repositorio
+2. Crear rama de feature
+3. Commit de cambios
+4. Push a la rama
+5. Crear Pull Request
+
+### Guía de Contribución
+
+- Seguir estilo de código establecido
+- Incluir pruebas para nueva funcionalidad
+- Actualizar documentación relevante
+- Referenciar issues relacionados
+
+## Licencia
 
 [MIT License](LICENSE)
