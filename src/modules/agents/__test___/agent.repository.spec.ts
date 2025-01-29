@@ -15,7 +15,7 @@ describe('AgentRepository', () => {
         {
           provide: 'AgentRepository',
           useValue: {
-            findByName: jest.fn(),
+            findByName: jest.fn().mockResolvedValue([]),
             save: jest.fn(),
           },
         },

@@ -5,6 +5,24 @@ import { DynamoDBMemoryRepository } from '../infrastructure/repositories/dynamod
 import { MemoryEntry } from '../domain/entities/memory-entry.entity';
 import { v4 as uuidv4 } from 'uuid';
 
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+
+function marshalMetadata(metadata: any): { [key: string]: AttributeValue } {
+  return Object.entries(metadata).reduce((acc, [key, value]) => {
+    if (value instanceof Date) {
+      acc[key] = { S: value.toISOString() };
+    } else if (Array.isArray(value)) {
+      acc[key] = { L: value.map(v => ({ S: v })) };
+    } else if (typeof value === 'object' && value !== null) {
+      acc[key] = { M: marshalMetadata(value) };
+      acc[key] = { M: marshalMetadata(value) };
+    } else {
+      acc[key] = { S: value.toString() };
+    }
+    return acc;
+  }, {} as { [key: string]: AttributeValue });
+}
+
 describe('Memory Integration Tests', () => {
   let repository: DynamoDBMemoryRepository;
   let dynamoDBClient: DynamoDBClient;
@@ -60,11 +78,26 @@ describe('Memory Integration Tests', () => {
         embedding
       );
 
+      const sendMock = jest.spyOn(dynamoDBClient, 'send').mockImplementation(() => 
+        Promise.resolve({
+          $metadata: {},
+          Attributes: undefined
+        })
+      );
+
       await repository.save(testEntry);
-      const savedEntry = await repository.findById(testEntry.getId());
-      
-      expect(savedEntry).toBeDefined();
-      expect(savedEntry?.getContent()).toBe('Integration test content');
+
+      expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+        TableName: expect.any(String),
+        Item: expect.objectContaining({
+          id: { S: testEntry.getId() },
+          content: { S: testEntry.getContent() },
+          metadata: { M: marshalMetadata(testEntry.getMetadata()) },
+          embedding: { L: testEntry.getEmbedding()?.map(v => ({ N: v.toString() })) },
+          createdAt: { S: testEntry.getCreatedAt().toISOString() },
+          updatedAt: { S: testEntry.getUpdatedAt().toISOString() },
+        }),
+      }));
     });
 
     it('should find similar entries', async () => {

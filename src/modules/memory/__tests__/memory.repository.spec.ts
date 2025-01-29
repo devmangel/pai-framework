@@ -44,7 +44,17 @@ describe('DynamoDBMemoryRepository', () => {
 
       await repository.save(entry);
 
-      expect(sendMock).toHaveBeenCalled();
+      expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+        TableName: expect.any(String),
+        Item: expect.objectContaining({
+          id: { S: entry.getId() },
+          content: { S: entry.getContent() },
+          metadata: { M: marshalMetadata(entry.getMetadata()) },
+          embedding: { L: entry.getEmbedding()?.map(v => ({ N: v.toString() })) },
+          createdAt: { S: entry.getCreatedAt().toISOString() },
+          updatedAt: { S: entry.getUpdatedAt().toISOString() },
+        }),
+      }));
     });
   });
 
