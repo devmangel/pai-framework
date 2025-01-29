@@ -20,7 +20,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
       await this.dynamoDBClient.send(
         new PutItemCommand({
           TableName: this.tableName,
-          Item: marshall(item),
+          Item: marshall(item, { removeUndefinedValues: true }),
           ConditionExpression: 'attribute_not_exists(id)',
         })
       );
@@ -36,7 +36,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
     const result = await this.dynamoDBClient.send(
       new GetItemCommand({
         TableName: this.tableName,
-        Key: marshall({ id: id.toString() }),
+        Key: marshall({ id: id.toString() }, { removeUndefinedValues: true }),
       })
     );
 
@@ -68,7 +68,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         },
         ExpressionAttributeValues: marshall({
           ':name': name,
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -82,7 +82,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
       await this.dynamoDBClient.send(
         new PutItemCommand({
           TableName: this.tableName,
-          Item: marshall(item),
+          Item: marshall(item, { removeUndefinedValues: true }),
           ConditionExpression: 'attribute_exists(id)',
         })
       );
@@ -99,7 +99,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
       await this.dynamoDBClient.send(
         new DeleteItemCommand({
           TableName: this.tableName,
-          Key: marshall({ id: id.toString() }),
+          Key: marshall({ id: id.toString() }, { removeUndefinedValues: true }),
           ConditionExpression: 'attribute_exists(id)',
         })
       );
@@ -119,7 +119,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         KeyConditionExpression: 'teamId = :teamId',
         ExpressionAttributeValues: marshall({
           ':teamId': teamId,
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -135,7 +135,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         FilterExpression: 'contains(capabilities, :capabilityName)',
         ExpressionAttributeValues: marshall({
           ':capabilityName': capabilityName,
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -150,7 +150,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         KeyConditionExpression: 'roleName = :roleName',
         ExpressionAttributeValues: marshall({
           ':roleName': roleName,
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -168,7 +168,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         },
         ExpressionAttributeValues: marshall({
           ':status': 'AVAILABLE',
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -186,7 +186,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         },
         ExpressionAttributeValues: marshall({
           ':status': 'BUSY',
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -201,7 +201,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         FilterExpression: 'expertise IN (:expertise)',
         ExpressionAttributeValues: marshall({
           ':expertise': expertise,
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -216,7 +216,7 @@ export class DynamoDBAgentRepository implements AgentRepository {
         FilterExpression: 'goals IN (:goals)',
         ExpressionAttributeValues: marshall({
           ':goals': goals,
-        }),
+        }, { removeUndefinedValues: true }),
       })
     );
 
@@ -242,8 +242,8 @@ export class DynamoDBAgentRepository implements AgentRepository {
       description: agent.getDescription(),
       goals: agent.getGoals(),
       memory: agent.getMemory(),
-      createdAt: agent.getCreatedAt().toISOString(),
-      updatedAt: agent.getUpdatedAt().toISOString(),
+      createdAt: agent.getCreatedAt(),
+      updatedAt: agent.getUpdatedAt(),
     };
   }
 
@@ -277,8 +277,8 @@ export class DynamoDBAgentRepository implements AgentRepository {
       item.description,
       item.goals,
       item.memory,
-      new Date(item.createdAt),
-      new Date(item.updatedAt)
+      item.createdAt,
+      item.updatedAt
     );
   }
 }

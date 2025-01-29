@@ -11,8 +11,8 @@ export class Agent {
     private description: string,
     private goals: string[],
     private memory: Record<string, any>,
-    private createdAt: Date,
-    private updatedAt: Date,
+    private createdAt: string,
+    private updatedAt: string,
   ) {}
 
   public static create(
@@ -22,7 +22,7 @@ export class Agent {
     description: string,
     goals: string[],
   ): Agent {
-    const now = new Date();
+    const now = new Date().toISOString().replace("T", " ").replace(/\..+/, "");
     return new Agent(
       AgentId.generate(),
       name,
@@ -65,11 +65,11 @@ export class Agent {
     return { ...this.memory };
   }
 
-  public getCreatedAt(): Date {
+  public getCreatedAt(): string {
     return this.createdAt;
   }
 
-  public getUpdatedAt(): Date {
+  public getUpdatedAt(): string {
     return this.updatedAt;
   }
 
@@ -112,7 +112,7 @@ export class Agent {
   }
 
   private updateTimestamp(): void {
-    this.updatedAt = new Date();
+    this.updatedAt = new Date().toISOString().replace("T", " ").replace(/\..+/, "");
   }
 
   public toJSON() {
@@ -124,8 +124,8 @@ export class Agent {
       description: this.description,
       goals: this.goals,
       memory: this.memory,
-      createdAt: this.createdAt.toISOString(),
-      updatedAt: this.updatedAt.toISOString(),
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
     };
   }
 }

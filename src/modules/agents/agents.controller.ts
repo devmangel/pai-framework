@@ -22,8 +22,8 @@ export class AgentsController {
     return {
       id: 'temp-id',
       ...createAgentDto,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString().replace("T", " ").replace(/\..+/, ""),
+      updatedAt: new Date().toISOString().replace("T", " ").replace(/\..+/, ""),
     };
   }
 
@@ -41,8 +41,8 @@ export class AgentsController {
       name: 'Test Agent',
       description: 'Test Description',
       role: 'Test Role',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString().replace("T", " ").replace(/\..+/, ""),
+      updatedAt: new Date().toISOString().replace("T", " ").replace(/\..+/, ""),
     };
   }
 
@@ -59,8 +59,8 @@ export class AgentsController {
       role: updateAgentDto.role || 'Updated Role',
       config: updateAgentDto.config,
       llmProvider: updateAgentDto.llmProvider,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString().replace("T", " ").replace(/\..+/, ""),
+      updatedAt: new Date().toISOString().replace("T", " ").replace(/\..+/, ""),
     };
   }
 

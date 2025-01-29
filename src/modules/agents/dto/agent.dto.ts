@@ -5,6 +5,6 @@ export class AgentDto {
   role: string;
   config?: Record<string, any>;
   llmProvider?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
