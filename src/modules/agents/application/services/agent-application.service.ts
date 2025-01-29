@@ -1,12 +1,12 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { TaskService } from '../../modules/tasks/domain/ports/task.service';
-import { AgentRepository, AgentNotFoundError } from './domain/ports/agent.repository';
-import { CreateAgentDto } from './dto/create-agent.dto';
-import { UpdateAgentDto } from './dto/update-agent.dto';
-import { Agent } from './domain/entities/agent.entity';
-import { AgentId } from './domain/value-objects/agent-id.vo';
-import { TaskResult } from '../../modules/tasks/domain/value-objects/task-result.vo';
-import { AgentRole } from './domain/value-objects/agent-role.vo';
+import { TaskService } from '../../../tasks/domain/ports/task.service';
+import { AgentRepository, AgentNotFoundError } from '../../domain/ports/agent.repository';
+import { CreateAgentDto } from '../../interface/http/dtos/create-agent.dto';
+import { UpdateAgentDto } from '../../interface/http/dtos/update-agent.dto';
+import { Agent } from '../../domain/entities/agent.entity';
+import { AgentId } from '../../domain/value-objects/agent-id.vo';
+import { TaskResult } from '../../../tasks/domain/value-objects/task-result.vo';
+import { AgentRole } from '../../domain/value-objects/agent-role.vo';
 
 export interface AgentsService {
   createAgent(dto: CreateAgentDto): Promise<Agent>;
@@ -24,10 +24,10 @@ export class AgentsServiceImpl implements AgentsService {
   constructor(
     @Inject('TASK_SERVICE') private readonly taskService: TaskService,
     @Inject('AGENT_REPOSITORY') private readonly agentRepository: AgentRepository,
-  ) {}
+  ) { }
 
   async createAgent(dto: CreateAgentDto): Promise<Agent> {
-    const agent = Agent.create(dto.name, new AgentRole(dto.role, '', []), [], dto.description, []);
+    const agent = Agent.create(dto.name, new AgentRole(dto.role.name, dto.role.description, dto.role.responsibilities), [], dto.description, []);
     await this.agentRepository.save(agent);
     return agent;
   }
