@@ -222,6 +222,27 @@ export class Task {
     this.updatedAt = new Date();
   }
 
+  // Status check methods
+  isInProgress(): boolean {
+    return this.status === TaskStatus.IN_PROGRESS;
+  }
+
+  isCompleted(): boolean {
+    return this.status === TaskStatus.COMPLETED;
+  }
+
+  isBlocked(): boolean {
+    return this.status === TaskStatus.BLOCKED;
+  }
+
+  validate(): void {
+    if (!this.title) throw new Error('Title is required');
+    if (!this.description) throw new Error('Description is required');
+    if (!this.priority) throw new Error('Priority is required');
+    if (this.dependencies.some(dep => !dep)) throw new Error('Invalid dependency ID');
+    if (this.parentId && typeof this.parentId !== 'string') throw new Error('Invalid parent ID');
+  }
+
   toJSON(): Record<string, any> {
     return {
       id: this.id,

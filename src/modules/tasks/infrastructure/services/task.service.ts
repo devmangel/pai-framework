@@ -6,27 +6,19 @@ import { TaskStatus } from '../../domain/enums/task-status.enum';
 import { TaskPriority } from '../../domain/enums/task-priority.enum';
 import { TaskResult } from '../../domain/value-objects/task-result.vo';
 import { Agent } from '../../../agents/domain/entities/agent.entity';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class TaskServiceImpl implements TaskService {
   constructor(private readonly taskRepository: TaskRepository) {}
 
   async createTask(dto: CreateTaskDto): Promise<Task> {
-    const task = new Task(
-      uuidv4(),
+    const task = Task.create(
       dto.title,
       dto.description,
-      TaskStatus.PENDING,
       dto.priority,
-      undefined,
-      undefined,
-      new Date(),
-      new Date(),
-      undefined,
       dto.parentId,
       dto.dependencies,
-      dto.metadata,
+      dto.metadata
     );
 
     return this.taskRepository.create(task);
@@ -75,9 +67,7 @@ export class TaskServiceImpl implements TaskService {
       throw new BadRequestException(canStart.reason || 'Task cannot be started');
     }
 
-    task.updateStatus(TaskStatus.IN_PROGRESS);
-    task.assignTo(agent);
-
+    task.start(agent);
     return this.taskRepository.update(task);
   }
 
@@ -89,33 +79,25 @@ export class TaskServiceImpl implements TaskService {
       throw new BadRequestException(canComplete.reason || 'Task cannot be completed');
     }
 
-    task.updateStatus(TaskStatus.COMPLETED);
-    task.setResult(result);
-
+    task.complete(result);
     return this.taskRepository.update(task);
   }
 
   async failTask(id: string, error: string): Promise<Task> {
     const task = await this.getTaskById(id);
-    task.updateStatus(TaskStatus.FAILED);
-    task.setResult(TaskResult.createError(error));
-
+    task.fail(error);
     return this.taskRepository.update(task);
   }
 
   async cancelTask(id: string, reason: string): Promise<Task> {
     const task = await this.getTaskById(id);
-    task.updateStatus(TaskStatus.CANCELLED);
-    task.setResult(TaskResult.createError(reason));
-
+    task.cancel(reason);
     return this.taskRepository.update(task);
   }
 
   async blockTask(id: string, reason: string): Promise<Task> {
     const task = await this.getTaskById(id);
-    task.updateStatus(TaskStatus.BLOCKED);
-    task.updateMetadata({ ...task.getMetadata(), blockReason: reason });
-
+    task.block(reason);
     return this.taskRepository.update(task);
   }
 
@@ -125,11 +107,7 @@ export class TaskServiceImpl implements TaskService {
       throw new BadRequestException('Task is not blocked');
     }
 
-    task.updateStatus(TaskStatus.PENDING);
-    const metadata = task.getMetadata();
-    delete metadata.blockReason;
-    task.updateMetadata(metadata);
-
+    task.unblock();
     return this.taskRepository.update(task);
   }
 
@@ -196,19 +174,22 @@ export class TaskServiceImpl implements TaskService {
       throw new BadRequestException('Circular dependency detected');
     }
 
-    await this.taskRepository.addDependency(taskId, dependencyId);
+    task.addDependency(dependencyId);
+    await this.taskRepository.update(task);
   }
 
   async removeTaskDependency(taskId: string, dependencyId: string): Promise<void> {
-    await this.taskRepository.removeDependency(taskId, dependencyId);
+    const task = await this.getTaskById(taskId);
+    task.removeDependency(dependencyId);
+    await this.taskRepository.update(task);
   }
 
   async getTaskDependencies(taskId: string): Promise<Task[]> {
-    return this.taskRepository.getDependencies(taskId);
+    return this.taskRepository.findDependencies(taskId);
   }
 
   async getTaskDependents(taskId: string): Promise<Task[]> {
-    return this.taskRepository.getDependents(taskId);
+    return this.taskRepository.findDependents(taskId);
   }
 
   async checkDependenciesMet(taskId: string): Promise<boolean> {
@@ -217,20 +198,13 @@ export class TaskServiceImpl implements TaskService {
   }
 
   async createTasks(dtos: CreateTaskDto[]): Promise<Task[]> {
-    const tasks = dtos.map(dto => new Task(
-      uuidv4(),
+    const tasks = dtos.map(dto => Task.create(
       dto.title,
       dto.description,
-      TaskStatus.PENDING,
       dto.priority,
-      undefined,
-      undefined,
-      new Date(),
-      new Date(),
-      undefined,
       dto.parentId,
       dto.dependencies,
-      dto.metadata,
+      dto.metadata
     ));
 
     return this.taskRepository.createMany(tasks);

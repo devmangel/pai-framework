@@ -373,27 +373,32 @@ export class DynamoDBTaskRepository implements TaskRepository {
   }
 
   private toEntity(item: Record<string, any>): Task {
-    return new Task(
-      item.id,
+    const task = Task.create(
       item.title,
       item.description,
-      item.status,
       item.priority,
-      item.assignedTo, // This needs proper Agent entity conversion
-      item.result ? new TaskResult(
-        item.result.content,
-        item.result.success,
-        item.result.error,
-        item.result.metadata,
-        new Date(item.result.timestamp),
-      ) : undefined,
-      new Date(item.createdAt),
-      new Date(item.updatedAt),
-      item.completedAt ? new Date(item.completedAt) : undefined,
       item.parentId,
       item.dependencies || [],
-      item.metadata || {},
+      item.metadata || {}
     );
+
+    // Reconstruct the task state
+    const taskObj = task as any; // Temporary type assertion to set private fields
+    taskObj.id = item.id;
+    taskObj.status = item.status;
+    taskObj.assignedAgent = item.assignedTo; // This needs proper Agent entity conversion
+    taskObj.createdAt = new Date(item.createdAt);
+    taskObj.updatedAt = new Date(item.updatedAt);
+    taskObj.startedAt = item.startedAt ? new Date(item.startedAt) : null;
+    taskObj.completedAt = item.completedAt ? new Date(item.completedAt) : null;
+    
+    if (item.result) {
+      taskObj.result = item.result.success 
+        ? TaskResult.createSuccess(item.result.content, item.result.metadata)
+        : TaskResult.createError(item.result.error, item.result.metadata);
+    }
+
+    return task;
   }
 
   private chunkArray<T>(array: T[], size: number): T[][] {
@@ -402,5 +407,31 @@ export class DynamoDBTaskRepository implements TaskRepository {
       chunks.push(array.slice(i, i + size));
     }
     return chunks;
+  }
+
+  // Implement missing methods from TaskRepository interface
+  async findByParent(parentId: string): Promise<Task[]> {
+    return this.findChildren(parentId);
+  }
+
+  async findDependencies(taskId: string): Promise<Task[]> {
+    return this.getDependencies(taskId);
+  }
+
+  async findDependents(taskId: string): Promise<Task[]> {
+    return this.getDependents(taskId);
+  }
+
+  async exists(id: string): Promise<boolean> {
+    const task = await this.findById(id);
+    return task !== null;
+  }
+
+  async save(task: Task): Promise<void> {
+    await this.update(task);
+  }
+
+  async saveMany(tasks: Task[]): Promise<void> {
+    await this.updateMany(tasks);
   }
 }

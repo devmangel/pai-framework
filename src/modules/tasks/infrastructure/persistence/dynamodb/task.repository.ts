@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DynamoDBClient, PutItemCommand, GetItemCommand, QueryCommand, DeleteItemCommand, ScanCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, PutItemCommand, GetItemCommand, QueryCommand, DeleteItemCommand, ScanCommand, BatchWriteItemCommand } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import { Task } from '../../../domain/entities/task.entity';
 import { TaskStatus } from '../../../domain/enums/task-status.enum';
@@ -11,6 +11,16 @@ export class DynamoDBTaskRepository implements TaskRepository {
   private readonly tableName = 'Tasks';
 
   constructor(private readonly dynamoDBClient: DynamoDBClient) {}
+
+  async create(task: Task): Promise<Task> {
+    await this.save(task);
+    return task;
+  }
+
+  async update(task: Task): Promise<Task> {
+    await this.save(task);
+    return task;
+  }
 
   async save(task: Task): Promise<void> {
     const item = this.toItem(task);
@@ -46,17 +56,58 @@ export class DynamoDBTaskRepository implements TaskRepository {
     }
   }
 
-  async findAll(): Promise<Task[]> {
+  async findAll(filters?: {
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    agentId?: string;
+    parentId?: string;
+  }): Promise<Task[]> {
     try {
-      const result = await this.dynamoDBClient.send(
-        new ScanCommand({
-          TableName: this.tableName,
-        })
-      );
+      let command: QueryCommand | ScanCommand;
+      let expressionAttributeValues: any = {};
+      let expressionAttributeNames: any = {};
+      let filterExpressions: string[] = [];
 
+      if (filters?.status) {
+        command = new QueryCommand({
+          TableName: this.tableName,
+          IndexName: 'StatusIndex',
+          KeyConditionExpression: '#status = :status',
+          ExpressionAttributeNames: { '#status': 'status' },
+          ExpressionAttributeValues: marshall({ ':status': filters.status }),
+        });
+      } else if (filters?.priority) {
+        command = new QueryCommand({
+          TableName: this.tableName,
+          IndexName: 'PriorityIndex',
+          KeyConditionExpression: 'priority = :priority',
+          ExpressionAttributeValues: marshall({ ':priority': filters.priority }),
+        });
+      } else if (filters?.agentId) {
+        command = new QueryCommand({
+          TableName: this.tableName,
+          IndexName: 'AgentIndex',
+          KeyConditionExpression: 'assignedTo = :agentId',
+          ExpressionAttributeValues: marshall({ ':agentId': filters.agentId }),
+        });
+      } else {
+        command = new ScanCommand({ TableName: this.tableName });
+      }
+
+      if (filters?.parentId) {
+        filterExpressions.push('parentId = :parentId');
+        expressionAttributeValues[':parentId'] = filters.parentId;
+      }
+
+      if (filterExpressions.length > 0) {
+        command.input.FilterExpression = filterExpressions.join(' AND ');
+        command.input.ExpressionAttributeValues = marshall(expressionAttributeValues);
+      }
+
+      const result = await this.dynamoDBClient.send(command);
       return (result.Items || []).map(item => this.toEntity(unmarshall(item)));
     } catch (error) {
-      throw new Error(`Error finding all tasks: ${error.message}`);
+      throw new Error(`Error finding tasks: ${error.message}`);
     }
   }
 
@@ -74,89 +125,50 @@ export class DynamoDBTaskRepository implements TaskRepository {
   }
 
   async findByStatus(status: TaskStatus): Promise<Task[]> {
-    try {
-      const result = await this.dynamoDBClient.send(
-        new QueryCommand({
-          TableName: this.tableName,
-          IndexName: 'StatusIndex',
-          KeyConditionExpression: '#status = :status',
-          ExpressionAttributeNames: {
-            '#status': 'status',
-          },
-          ExpressionAttributeValues: marshall({
-            ':status': status,
-          }, { removeUndefinedValues: true }),
-        })
-      );
-
-      return (result.Items || []).map(item => this.toEntity(unmarshall(item)));
-    } catch (error) {
-      throw new Error(`Error finding tasks by status: ${error.message}`);
-    }
+    return this.findAll({ status });
   }
 
   async findByPriority(priority: TaskPriority): Promise<Task[]> {
-    try {
-      const result = await this.dynamoDBClient.send(
-        new QueryCommand({
-          TableName: this.tableName,
-          IndexName: 'PriorityIndex',
-          KeyConditionExpression: 'priority = :priority',
-          ExpressionAttributeValues: marshall({
-            ':priority': priority,
-          }, { removeUndefinedValues: true }),
-        })
-      );
-
-      return (result.Items || []).map(item => this.toEntity(unmarshall(item)));
-    } catch (error) {
-      throw new Error(`Error finding tasks by priority: ${error.message}`);
-    }
+    return this.findAll({ priority });
   }
 
   async findByAgent(agentId: string): Promise<Task[]> {
-    try {
-      const result = await this.dynamoDBClient.send(
-        new QueryCommand({
-          TableName: this.tableName,
-          IndexName: 'AgentIndex',
-          KeyConditionExpression: 'assignedTo = :agentId',
-          ExpressionAttributeValues: marshall({
-            ':agentId': agentId,
-          }, { removeUndefinedValues: true }),
-        })
-      );
-
-      return (result.Items || []).map(item => this.toEntity(unmarshall(item)));
-    } catch (error) {
-      throw new Error(`Error finding tasks by agent: ${error.message}`);
-    }
+    return this.findAll({ agentId });
   }
 
   async findByParent(parentId: string): Promise<Task[]> {
+    return this.findAll({ parentId });
+  }
+
+  async addDependency(taskId: string, dependencyId: string): Promise<void> {
     try {
-      const result = await this.dynamoDBClient.send(
-        new QueryCommand({
+      await this.dynamoDBClient.send(
+        new PutItemCommand({
           TableName: this.tableName,
-          IndexName: 'ParentIndex',
-          KeyConditionExpression: 'parentId = :parentId',
-          ExpressionAttributeValues: marshall({
-            ':parentId': parentId,
+          Item: marshall({
+            id: taskId,
+            dependencies: [dependencyId],
           }, { removeUndefinedValues: true }),
         })
       );
-
-      return (result.Items || []).map(item => this.toEntity(unmarshall(item)));
     } catch (error) {
-      throw new Error(`Error finding tasks by parent: ${error.message}`);
+      throw new Error(`Error adding dependency: ${error.message}`);
     }
+  }
+
+  async removeDependency(taskId: string, dependencyId: string): Promise<void> {
+    const task = await this.findById(taskId);
+    if (!task) return;
+
+    const dependencies = task.getDependencies().filter(id => id !== dependencyId);
+    const updatedTask = task as any;
+    updatedTask.dependencies = dependencies;
+    await this.save(task);
   }
 
   async findDependencies(taskId: string): Promise<Task[]> {
     const task = await this.findById(taskId);
-    if (!task) {
-      return [];
-    }
+    if (!task) return [];
 
     const dependencies = task.getDependencies();
     const tasks = await Promise.all(
@@ -216,12 +228,102 @@ export class DynamoDBTaskRepository implements TaskRepository {
     return task !== null;
   }
 
+  async createMany(tasks: Task[]): Promise<Task[]> {
+    const chunks = this.chunkArray(tasks, 25); // DynamoDB batch write limit
+    for (const chunk of chunks) {
+      const writeRequests = chunk.map(task => ({
+        PutRequest: {
+          Item: marshall(this.toItem(task), { removeUndefinedValues: true }),
+        },
+      }));
+
+      await this.dynamoDBClient.send(
+        new BatchWriteItemCommand({
+          RequestItems: {
+            [this.tableName]: writeRequests,
+          },
+        })
+      );
+    }
+    return tasks;
+  }
+
+  async updateMany(tasks: Task[]): Promise<Task[]> {
+    return this.createMany(tasks); // DynamoDB PutItem handles both create and update
+  }
+
   async saveMany(tasks: Task[]): Promise<void> {
-    await Promise.all(tasks.map(task => this.save(task)));
+    await this.createMany(tasks);
   }
 
   async deleteMany(ids: string[]): Promise<void> {
-    await Promise.all(ids.map(id => this.delete(id)));
+    const chunks = this.chunkArray(ids, 25);
+    for (const chunk of chunks) {
+      const writeRequests = chunk.map(id => ({
+        DeleteRequest: {
+          Key: marshall({ id }, { removeUndefinedValues: true }),
+        },
+      }));
+
+      await this.dynamoDBClient.send(
+        new BatchWriteItemCommand({
+          RequestItems: {
+            [this.tableName]: writeRequests,
+          },
+        })
+      );
+    }
+  }
+
+  async countByStatus(): Promise<Record<TaskStatus, number>> {
+    const tasks = await this.findAll();
+    const counts: Record<TaskStatus, number> = {
+      [TaskStatus.PENDING]: 0,
+      [TaskStatus.IN_PROGRESS]: 0,
+      [TaskStatus.COMPLETED]: 0,
+      [TaskStatus.FAILED]: 0,
+      [TaskStatus.BLOCKED]: 0,
+      [TaskStatus.CANCELLED]: 0,
+    };
+
+    tasks.forEach(task => {
+      counts[task.getStatus()]++;
+    });
+
+    return counts;
+  }
+
+  async countByPriority(): Promise<Record<TaskPriority, number>> {
+    const tasks = await this.findAll();
+    const counts: Record<TaskPriority, number> = {
+      [TaskPriority.LOW]: 0,
+      [TaskPriority.MEDIUM]: 0,
+      [TaskPriority.HIGH]: 0,
+      [TaskPriority.CRITICAL]: 0,
+    };
+
+    tasks.forEach(task => {
+      counts[task.getPriority()]++;
+    });
+
+    return counts;
+  }
+
+  async countByAgent(): Promise<Record<string, number>> {
+    const tasks = await this.findAll();
+    const counts: Record<string, number> = {};
+
+    tasks.forEach(task => {
+      const agent = task.getAssignedAgent();
+      if (agent) {
+        const agentId = agent.getId();
+        if (typeof agentId === 'string') {
+          counts[agentId] = (counts[agentId] || 0) + 1;
+        }
+      }
+    });
+
+    return counts;
   }
 
   private toItem(task: Task): Record<string, any> {
@@ -245,7 +347,23 @@ export class DynamoDBTaskRepository implements TaskRepository {
   }
 
   private toEntity(item: Record<string, any>): Task {
-    // Note: This is a placeholder. You'll need to implement the actual Task entity constructor
     return Task.fromJSON(item);
+  }
+
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  // Alias methods to match interface
+  async getDependencies(taskId: string): Promise<Task[]> {
+    return this.findDependencies(taskId);
+  }
+
+  async getDependents(taskId: string): Promise<Task[]> {
+    return this.findDependents(taskId);
   }
 }
