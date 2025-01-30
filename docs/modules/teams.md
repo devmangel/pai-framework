@@ -1,279 +1,79 @@
-# Módulo de Equipos
+# Teams Module
 
-## Descripción General
-El módulo de Equipos es un componente fundamental del framework AgentsAI que gestiona la organización y colaboración entre agentes. Proporciona una estructura jerárquica para la formación de equipos, gestión de roles, y comunicación a través de canales, permitiendo una colaboración efectiva entre agentes.
+## Overview
 
-## Estructura del Módulo
-```
-src/modules/teams/
-├── domain/
-│   ├── entities/
-│   │   └── team.entity.ts
-│   ├── enums/
-│   │   └── team-role.enum.ts
-│   ├── ports/
-│   │   └── team.repository.ts
-│   └── value-objects/
-│       ├── team-channel.vo.ts
-│       └── team-member.vo.ts
-├── application/
-│   ├── dtos/
-│   │   ├── channel-response.dto.ts
-│   │   ├── channel.dto.ts
-│   │   ├── create-team.dto.ts
-│   │   └── team-response.dto.ts
-│   ├── mappers/
-│   │   └── team.mapper.ts
-│   └── services/
-│       └── team.service.ts
-├── infrastructure/
-│   └── repositories/
-│       └── dynamodb-team.repository.ts
-└── interface/
-    └── http/
-        └── teams.controller.ts
-```
+The Teams module is responsible for managing teams within the system. It includes functionalities for creating, updating, deleting, and querying teams, as well as handling team members and channels.
 
-## Componentes Principales
+## Structure
 
-### 1. Entidad Equipo (Team)
+The module is structured as follows:
 
-La entidad principal que representa un equipo:
+- `teams.module.ts`: Defines the Teams module and its dependencies.
+- `domain/`: Contains the domain layer, including entities and repository interfaces.
+  - `entities/team.entity.ts`: Defines the `Team` entity.
+  - `ports/team.repository.ts`: Defines the `TeamRepository` interface and related exceptions.
+- `infrastructure/`: Contains the infrastructure layer, including repository implementations.
+  - `repositories/dynamodb-team.repository.ts`: Implements the `TeamRepository` interface using DynamoDB.
+- `interface/`: Contains the interface layer, including HTTP controllers and DTOs.
+  - `http/teams.controller.ts`: Defines the `TeamsController` for handling HTTP requests.
+  - `application/dtos/create-team.dto.ts`: Defines the DTO for creating a team.
+  - `application/dtos/channel.dto.ts`: Defines DTOs for managing team channels.
 
-#### Propiedades
-```typescript
-class Team extends AggregateRoot {
-  constructor(
-    id: string,
-    name: string,
-    description: string,
-    members: TeamMember[],
-    channels: TeamChannel[],
-    createdAt: Date,
-    updatedAt: Date
-  )
-}
-```
+## Components
 
-#### Roles de Equipo
-```typescript
-enum TeamRole {
-  OWNER = 'OWNER',
-  ADMIN = 'ADMIN',
-  MEMBER = 'MEMBER',
-  GUEST = 'GUEST'
-}
-```
+### Teams Module
 
-#### Métodos Principales
-```typescript
-// Gestión de Miembros
-addMember(member: TeamMember): void
-removeMember(agentId: string): void
-updateMemberRole(agentId: string, role: TeamRole): void
-hasMember(agentId: string): boolean
+The `TeamsModule` is defined in `teams.module.ts` and includes the following components:
 
-// Gestión de Canales
-createChannel(id: string, name: string, description: string, createdBy: string): void
-removeChannel(channelId: string): void
-updateChannelDescription(channelId: string, description: string): void
-addMemberToChannel(channelId: string, member: TeamMember): void
-removeMemberFromChannel(channelId: string, agentId: string): void
-```
+- `TeamsController`: Handles HTTP requests related to teams.
+- `DynamoDBTeamRepository`: Implements the `TeamRepository` interface using DynamoDB.
+- `TeamService`: Provides the service implementation for managing teams.
+- `TEAM_REPOSITORY`: Token for the team repository.
 
-### 2. Miembro de Equipo (TeamMember)
+### Entities
 
-Value Object que representa un miembro del equipo:
+#### Team
 
-```typescript
-class TeamMember {
-  constructor(
-    agentId: string,
-    role: TeamRole,
-    joinedAt: Date
-  )
+The `Team` entity represents a team in the system. It includes properties such as `id`, `name`, `description`, `members`, `channels`, `createdAt`, and `updatedAt`.
 
-  // Permisos basados en roles
-  canManageTeam(): boolean
-  canInviteMembers(): boolean
-  canRemoveMembers(): boolean
-  canUpdateTeamInfo(): boolean
+### Repositories
 
-  // Factory method
-  static create(agentId: string, role: TeamRole = TeamRole.MEMBER): TeamMember
-}
-```
+#### TeamRepository
 
-### 3. Canal de Equipo (TeamChannel)
+The `TeamRepository` interface defines the methods for interacting with the team repository. These methods include:
 
-Value Object que representa un canal de comunicación:
+- `findById(id: string): Promise<Team | null>`
+- `findAll(): Promise<Team[]>`
+- `findByMemberId(agentId: string): Promise<Team[]>`
+- `save(team: Team): Promise<void>`
+- `delete(id: string): Promise<void>`
+- `exists(id: string): Promise<boolean>`
+- `findByName(name: string): Promise<Team | null>`
 
-```typescript
-class TeamChannel {
-  constructor(
-    id: string,
-    name: string,
-    description: string,
-    createdBy: string,
-    createdAt: Date,
-    updatedAt: Date,
-    members: TeamMember[],
-    messages: TeamChannelMessage[]
-  )
+### Implementations
 
-  // Gestión de mensajes y miembros
-  addMessage(message: TeamChannelMessage): void
-  addMember(member: TeamMember): void
-  removeMember(agentId: string): void
-  hasMember(agentId: string): boolean
-}
+#### DynamoDBTeamRepository
 
-class TeamChannelMessage {
-  constructor(
-    id: string,
-    content: string,
-    senderId: string,
-    createdAt: Date,
-    metadata: Record<string, any>
-  )
-}
-```
+The `DynamoDBTeamRepository` class implements the `TeamRepository` interface using DynamoDB. It provides methods to interact with DynamoDB for storing, retrieving, updating, and deleting teams.
 
-## API REST
+### Controllers
 
-### Endpoints Principales
+#### TeamsController
 
-#### 1. Crear Equipo
-```http
-POST /teams
-Content-Type: application/json
+The `TeamsController` class handles HTTP requests related to teams. It includes methods for creating, finding, updating, and deleting teams, as well as managing team members and channels.
 
-{
-  "name": "Equipo de Análisis",
-  "description": "Equipo especializado en análisis de datos",
-  "members": [
-    {
-      "agentId": "agent-1",
-      "role": "OWNER"
-    }
-  ]
-}
-```
+### DTOs
 
-#### 2. Gestión de Miembros
-```http
-POST /teams/:id/members
-DELETE /teams/:id/members/:agentId
-PUT /teams/:id/members/:agentId/role
-```
+#### CreateTeamDto
 
-#### 3. Gestión de Canales
-```http
-POST /teams/:id/channels
-Content-Type: application/json
+The `CreateTeamDto` class is used to validate and transfer the data needed to create a team. It includes properties such as `name`, `description`, and `members`.
 
-{
-  "name": "análisis-mercado",
-  "description": "Canal para análisis de mercado",
-  "members": ["agent-1", "agent-2"]
-}
-```
+#### Channel DTOs
 
-#### 4. Comunicación en Canales
-```http
-POST /teams/:id/channels/:channelId/messages
-GET /teams/:id/channels/:channelId/messages
-```
+The `Channel DTOs` are used to validate and transfer the data needed to manage team channels. These include:
 
-## Mejores Prácticas
-
-### 1. Creación de Equipos
-```typescript
-// Crear equipo con estructura básica
-const team = Team.create(
-  'team-1',
-  'Equipo de Análisis',
-  'Equipo especializado en análisis de datos',
-  [TeamMember.create('agent-1', TeamRole.OWNER)]
-);
-
-// Añadir canales iniciales
-team.createChannel(
-  'channel-1',
-  'general',
-  'Canal general del equipo',
-  'agent-1'
-);
-```
-
-### 2. Gestión de Roles
-```typescript
-// Verificar permisos antes de acciones
-if (member.canManageTeam()) {
-  team.addMember(newMember);
-}
-
-// Actualizar roles con validación
-try {
-  team.updateMemberRole(agentId, TeamRole.ADMIN);
-} catch (error) {
-  // Manejar error de permisos
-}
-```
-
-### 3. Comunicación en Canales
-```typescript
-// Enviar mensaje en canal
-const message = TeamChannelMessage.create(
-  'msg-1',
-  'Iniciando análisis de datos',
-  'agent-1',
-  { type: 'TASK_UPDATE' }
-);
-channel.addMessage(message);
-
-// Verificar membresía antes de enviar
-if (channel.hasMember(agentId)) {
-  channel.addMessage(message);
-}
-```
-
-### 4. Sincronización de Estado
-```typescript
-// Mantener estado consistente
-team.addMember(member);
-team.channels.forEach(channel => {
-  channel.addMember(member);
-});
-```
-
-## Conclusiones
-
-El módulo de Equipos proporciona una base robusta para la colaboración entre agentes:
-
-### Características Clave
-- Gestión jerárquica de equipos
-- Sistema de roles y permisos
-- Canales de comunicación
-- Mensajería estructurada
-
-### Puntos Fuertes
-1. **Organización**
-   - Estructura clara de equipos
-   - Roles bien definidos
-   - Canales temáticos
-
-2. **Colaboración**
-   - Comunicación en tiempo real
-   - Gestión de permisos
-   - Trazabilidad de mensajes
-
-3. **Flexibilidad**
-   - Equipos multi-agente
-   - Canales personalizables
-   - Metadatos extensibles
-
-### Integración
-- Conexión con módulo de Agentes
-- Sincronización con Tareas
-- Eventos y notificaciones
+- `CreateChannelDto`: Defines the DTO for creating a channel.
+- `UpdateChannelDescriptionDto`: Defines the DTO for updating a channel's description.
+- `AddChannelMemberDto`: Defines the DTO for adding a member to a channel.
+- `RemoveChannelMemberDto`: Defines the DTO for removing a member from a channel.
+- `AddChannelMessageDto`: Defines the DTO for adding a message to a channel.

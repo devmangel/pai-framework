@@ -1,331 +1,92 @@
-# Módulo de Tareas
+# Tasks Module
 
-## Descripción General
-El módulo de Tareas es un componente esencial del framework AgentsAI que gestiona la creación, asignación y seguimiento de tareas para los agentes. Proporciona una estructura robusta para la gestión del ciclo de vida de las tareas, incluyendo dependencias, prioridades y resultados.
+## Overview
 
-## Estructura del Módulo
-```
-src/modules/tasks/
-├── domain/
-│   ├── entities/
-│   │   └── task.entity.ts
-│   ├── enums/
-│   │   ├── task-priority.enum.ts
-│   │   └── task-status.enum.ts
-│   ├── exceptions/
-│   │   └── task.exceptions.ts
-│   ├── ports/
-│   │   ├── task.repository.ts
-│   │   └── task.service.ts
-│   └── value-objects/
-│       └── task-result.vo.ts
-├── infrastructure/
-│   ├── repositories/
-│   │   └── dynamodb-task.repository.ts
-│   └── services/
-│       └── task.service.ts
-└── interface/
-    └── http/
-        ├── tasks.controller.ts
-        ├── dtos/
-        │   ├── create-task.dto.ts
-        │   └── update-task.dto.ts
-        └── filters/
-            └── task-exception.filter.ts
-```
+The Tasks module is responsible for managing tasks within the system. It includes functionalities for creating, updating, deleting, and querying tasks, as well as handling task dependencies, assignments, and lifecycle management.
 
-## Componentes Principales
+## Structure
 
-### 1. Entidad Tarea (Task)
+The module is structured as follows:
 
-La entidad principal que representa una tarea en el sistema:
+- `tasks.module.ts`: Defines the Tasks module and its dependencies.
+- `domain/`: Contains the domain layer, including entities and repository interfaces.
+  - `entities/task.entity.ts`: Defines the `Task` entity.
+  - `ports/task.repository.ts`: Defines the `TaskRepository` interface and related exceptions.
+- `infrastructure/`: Contains the infrastructure layer, including repository implementations.
+  - `persistence/dynamodb/task.repository.ts`: Implements the `TaskRepository` interface using DynamoDB.
+- `interface/`: Contains the interface layer, including HTTP controllers and DTOs.
+  - `http/tasks.controller.ts`: Defines the `TasksController` for handling HTTP requests.
+  - `http/dtos/create-task.dto.ts`: Defines the DTO for creating a task.
+  - `http/dtos/update-task.dto.ts`: Defines the DTO for updating a task.
 
-#### Propiedades
-```typescript
-class Task {
-  constructor(
-    id: string,
-    title: string,
-    description: string,
-    status: TaskStatus,
-    priority: TaskPriority,
-    assignedTo?: Agent,
-    result?: TaskResult,
-    createdAt: Date,
-    updatedAt: Date,
-    completedAt?: Date,
-    parentId?: string,
-    dependencies: string[],
-    metadata: Record<string, any>
-  )
-}
-```
+## Components
 
-#### Estados de Tarea
-```typescript
-enum TaskStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  BLOCKED = 'BLOCKED',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED'
-}
-```
+### Tasks Module
 
-#### Niveles de Prioridad
-```typescript
-enum TaskPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL'
-}
-```
+The `TasksModule` is defined in `tasks.module.ts` and includes the following components:
 
-#### Métodos Principales
-```typescript
-// Getters
-getId(): string
-getTitle(): string
-getDescription(): string
-getStatus(): TaskStatus
-getPriority(): TaskPriority
-getAssignedAgent(): Agent | undefined
-getResult(): TaskResult | undefined
+- `TasksController`: Handles HTTP requests related to tasks.
+- `DynamoDBTaskRepository`: Implements the `TaskRepository` interface using DynamoDB.
+- `TaskServiceImpl`: Provides the service implementation for managing tasks.
+- `TASK_REPOSITORY`: Token for the task repository.
 
-// Setters
-updateTitle(title: string): void
-updateDescription(description: string): void
-updateStatus(status: TaskStatus): void
-updatePriority(priority: TaskPriority): void
-assignTo(agent: Agent): void
-unassign(): void
-setResult(result: TaskResult): void
+### Entities
 
-// Estado
-isAssigned(): boolean
-isCompleted(): boolean
-isInProgress(): boolean
-hasResult(): boolean
-hasDependencies(): boolean
-isBlocked(): boolean
-isHighPriority(): boolean
-```
+#### Task
 
-### 2. Resultado de Tarea (TaskResult)
+The `Task` entity represents a task in the system. It includes properties such as `id`, `title`, `description`, `status`, `priority`, `assignedAgent`, `parentId`, `dependencies`, `metadata`, `result`, `createdAt`, `updatedAt`, `startedAt`, `completedAt`, and `dueDate`.
 
-Value Object que representa el resultado de una tarea:
+### Repositories
 
-```typescript
-class TaskResult {
-  constructor(
-    content: string,
-    success: boolean,
-    error?: string,
-    metadata?: Record<string, any>,
-    timestamp?: Date
-  )
+#### TaskRepository
 
-  // Métodos Factory
-  static createSuccess(
-    content: string,
-    metadata?: Record<string, any>
-  ): TaskResult
+The `TaskRepository` interface defines the methods for interacting with the task repository. These methods include:
 
-  static createError(
-    error: string,
-    metadata?: Record<string, any>
-  ): TaskResult
-}
-```
+- `create(task: Task): Promise<Task>`
+- `update(task: Task): Promise<Task>`
+- `save(task: Task): Promise<void>`
+- `findById(id: string): Promise<Task | null>`
+- `findAll(filters?: { status?: TaskStatus; priority?: TaskPriority; agentId?: string; parentId?: string }): Promise<Task[]>`
+- `delete(id: string): Promise<void>`
+- `findByStatus(status: TaskStatus): Promise<Task[]>`
+- `findByPriority(priority: TaskPriority): Promise<Task[]>`
+- `findByAgent(agentId: string): Promise<Task[]>`
+- `findByParent(parentId: string): Promise<Task[]>`
+- `findDependencies(taskId: string): Promise<Task[]>`
+- `findDependents(taskId: string): Promise<Task[]>`
+- `findBlocked(): Promise<Task[]>`
+- `findOverdue(): Promise<Task[]>`
+- `exists(id: string): Promise<boolean>`
+- `createMany(tasks: Task[]): Promise<Task[]>`
+- `updateMany(tasks: Task[]): Promise<Task[]>`
+- `saveMany(tasks: Task[]): Promise<void>`
+- `deleteMany(ids: string[]): Promise<void>`
+- `addDependency(taskId: string, dependencyId: string): Promise<void>`
+- `removeDependency(taskId: string, dependencyId: string): Promise<void>`
+- `getDependencies(taskId: string): Promise<Task[]>`
+- `getDependents(taskId: string): Promise<Task[]>`
+- `countByStatus(): Promise<Record<TaskStatus, number>>`
+- `countByPriority(): Promise<Record<TaskPriority, number>>`
+- `countByAgent(): Promise<Record<string, number>>`
 
-### 3. Servicio de Tareas
+### Implementations
 
-Interface que define las operaciones disponibles:
+#### DynamoDBTaskRepository
 
-#### Operaciones Principales
-```typescript
-interface TaskService {
-  // Operaciones básicas
-  createTask(dto: CreateTaskDto): Promise<Task>
-  getTaskById(id: string): Promise<Task>
-  updateTask(id: string, dto: UpdateTaskDto): Promise<Task>
-  deleteTask(id: string): Promise<void>
-  
-  // Gestión del ciclo de vida
-  startTask(id: string, agent: Agent): Promise<Task>
-  completeTask(id: string, result: TaskResult): Promise<Task>
-  failTask(id: string, error: string): Promise<Task>
-  cancelTask(id: string, reason: string): Promise<Task>
-  blockTask(id: string, reason: string): Promise<Task>
-  unblockTask(id: string): Promise<Task>
-  
-  // Gestión de asignaciones
-  assignTask(id: string, agent: Agent): Promise<Task>
-  unassignTask(id: string): Promise<Task>
-  reassignTask(id: string, newAgent: Agent): Promise<Task>
-}
-```
+The `DynamoDBTaskRepository` class implements the `TaskRepository` interface using DynamoDB. It provides methods to interact with DynamoDB for storing, retrieving, updating, and deleting tasks.
 
-#### Consultas y Filtros
-```typescript
-interface TaskService {
-  getTasks(filters?: {
-    status?: TaskStatus
-    priority?: TaskPriority
-    agentId?: string
-    parentId?: string
-  }): Promise<Task[]>
-  
-  getTasksByStatus(status: TaskStatus): Promise<Task[]>
-  getTasksByPriority(priority: TaskPriority): Promise<Task[]>
-  getTasksByAgent(agentId: string): Promise<Task[]>
-  getBlockedTasks(): Promise<Task[]>
-  getOverdueTasks(): Promise<Task[]>
-}
-```
+### Controllers
 
-### 4. Gestión de Dependencias
+#### TasksController
 
-Funcionalidades para manejar relaciones entre tareas:
+The `TasksController` class handles HTTP requests related to tasks. It includes methods for creating, finding, updating, and deleting tasks, as well as managing task lifecycle, assignments, dependencies, batch operations, and statistics.
 
-```typescript
-interface TaskService {
-  // Gestión de dependencias
-  addTaskDependency(taskId: string, dependencyId: string): Promise<void>
-  removeTaskDependency(taskId: string, dependencyId: string): Promise<void>
-  getTaskDependencies(taskId: string): Promise<Task[]>
-  getTaskDependents(taskId: string): Promise<Task[]>
-  checkDependenciesMet(taskId: string): Promise<boolean>
-}
-```
+### DTOs
 
-## API REST
+#### CreateTaskDto
 
-### Endpoints Principales
+The `CreateTaskDto` class is used to validate and transfer the data needed to create a task. It includes properties such as `title`, `description`, `priority`, `parentId`, `dependencies`, and `metadata`.
 
-#### 1. Crear Tarea
-```http
-POST /tasks
-Content-Type: application/json
+#### UpdateTaskDto
 
-{
-  "title": "Analizar datos de mercado",
-  "description": "Realizar análisis de tendencias",
-  "priority": "HIGH",
-  "dependencies": ["task-id-1", "task-id-2"],
-  "metadata": {
-    "domain": "finanzas",
-    "requiredTools": ["análisis-estadístico"]
-  }
-}
-```
-
-#### 2. Actualizar Tarea
-```http
-PUT /tasks/:id
-Content-Type: application/json
-
-{
-  "title": "Nuevo título",
-  "priority": "CRITICAL",
-  "metadata": {
-    "urgente": true
-  }
-}
-```
-
-#### 3. Gestionar Estado
-```http
-POST /tasks/:id/start
-POST /tasks/:id/complete
-POST /tasks/:id/fail
-POST /tasks/:id/cancel
-POST /tasks/:id/block
-POST /tasks/:id/unblock
-```
-
-#### 4. Gestionar Asignaciones
-```http
-POST /tasks/:id/assign
-POST /tasks/:id/unassign
-POST /tasks/:id/reassign
-```
-
-## Mejores Prácticas
-
-### 1. Creación de Tareas
-```typescript
-// Crear tarea con dependencias
-const task = await taskService.createTask({
-  title: "Análisis de Datos",
-  description: "Procesar datos de ventas Q4",
-  priority: TaskPriority.HIGH,
-  dependencies: ["task-1", "task-2"],
-  metadata: {
-    dataSource: "ventas_q4.csv",
-    requiredMemory: "4GB"
-  }
-});
-```
-
-### 2. Gestión de Estados
-```typescript
-// Flujo de trabajo típico
-await taskService.startTask(taskId, agent);
-try {
-  const result = await processTask(taskId);
-  await taskService.completeTask(taskId, TaskResult.createSuccess(result));
-} catch (error) {
-  await taskService.failTask(taskId, error.message);
-}
-```
-
-### 3. Manejo de Dependencias
-```typescript
-// Verificar dependencias antes de iniciar
-const { can, reason } = await taskService.canStart(taskId);
-if (!can) {
-  await taskService.blockTask(taskId, reason);
-  return;
-}
-
-// Iniciar tarea
-await taskService.startTask(taskId, agent);
-```
-
-### 4. Monitoreo y Estadísticas
-```typescript
-// Obtener estadísticas
-const stats = await taskService.getTaskStatistics();
-console.log('Tareas por estado:', stats.byStatus);
-console.log('Tareas por prioridad:', stats.byPriority);
-console.log('Tareas por agente:', stats.byAgent);
-```
-
-## Conclusiones
-
-El módulo de Tareas proporciona una base sólida para la gestión de tareas con:
-
-### Características Clave
-- Gestión completa del ciclo de vida
-- Sistema de dependencias flexible
-- Priorización y asignación de recursos
-- Seguimiento detallado de estados
-
-### Puntos Fuertes
-1. **Flexibilidad**
-   - Múltiples estados y prioridades
-   - Metadatos personalizables
-   - Sistema de dependencias robusto
-
-2. **Trazabilidad**
-   - Registro completo de cambios
-   - Resultados detallados
-   - Estadísticas y análisis
-
-3. **Integración**
-   - Conexión con módulo de Agentes
-   - API REST completa
-   - Eventos y notificaciones
+The `UpdateTaskDto` class is used to validate and transfer the data needed to update a task. It includes properties such as `title`, `description`, `priority`, and `metadata`.
