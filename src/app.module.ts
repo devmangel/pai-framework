@@ -28,7 +28,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
     }),
     RabbitMQModule.forRoot({
       exchanges: [{ name: 'tasks', type: 'topic' }],
-      uri: 'amqp://localhost:5672',
+      uri: 'amqp://guest:guest@127.0.0.1:5672',
       // otras opciones
     }),
   ],
