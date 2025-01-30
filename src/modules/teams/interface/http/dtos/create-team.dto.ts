@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsArray, ValidateNested, IsEnum, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TeamRole } from '../../domain/enums/team-role.enum';
+import { TeamRole } from '../../../domain/enums/team-role.enum';
 
 export class CreateTeamMemberDto {
   @IsString()

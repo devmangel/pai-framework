@@ -1,8 +1,8 @@
 import { Team } from '../../domain/entities/team.entity';
 import { TeamMember } from '../../domain/value-objects/team-member.vo';
-import { CreateTeamDto, CreateTeamMemberDto } from '../dtos/create-team.dto';
-import { TeamResponseDto, TeamMemberResponseDto } from '../dtos/team-response.dto';
-import { TeamChannelResponseDto, TeamChannelMessageResponseDto, TeamChannelMemberResponseDto } from '../dtos/channel-response.dto';
+import { CreateTeamDto, CreateTeamMemberDto } from '../../interface/http/dtos/create-team.dto';
+import { TeamResponseDto, TeamMemberResponseDto } from '../../interface/http/dtos/team-response.dto';
+import { TeamChannelResponseDto, TeamChannelMessageResponseDto, TeamChannelMemberResponseDto } from '../../interface/http/dtos/channel-response.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 export class TeamMapper {

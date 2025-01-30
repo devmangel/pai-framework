@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { TeamRepository, TEAM_REPOSITORY } from '../../domain/ports/team.repository';
-import { CreateTeamDto } from '../dtos/create-team.dto';
+import { CreateTeamDto } from '../../interface/http/dtos/create-team.dto';
 import { TeamMapper } from '../mappers/team.mapper';
 import { Team } from '../../domain/entities/team.entity';
 import { TeamRole } from '../../domain/enums/team-role.enum';

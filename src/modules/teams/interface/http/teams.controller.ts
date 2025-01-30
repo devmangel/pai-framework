@@ -12,7 +12,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { TeamService } from '../../application/services/team.service';
-import { CreateTeamDto } from '../../application/dtos/create-team.dto';
+import { CreateTeamDto } from '../../interface/http/dtos/create-team.dto';
 import { TeamMapper } from '../../application/mappers/team.mapper';
 import { TeamRole } from '../../domain/enums/team-role.enum';
 import {
@@ -21,7 +21,7 @@ import {
   AddChannelMemberDto,
   RemoveChannelMemberDto,
   AddChannelMessageDto,
-} from '../../application/dtos/channel.dto';
+} from '../../interface/http/dtos/channel.dto';
 
 @Controller('teams')
 @UsePipes(new ValidationPipe({ transform: true }))
