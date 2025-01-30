@@ -6,6 +6,8 @@ import { TaskServiceImpl } from '../../../tasks/application/services/task-applic
 import { LLMService } from '../../../llm/domain/ports/llm.service';
 import { ToolService } from '../../../tools/application/services/tool-application.service';
 import { MemoryRepository } from '../../../memory/domain/ports/memory.repository';
+import { MemoryEntry } from '../../../memory/domain/entities/memory-entry.entity';
+import { TaskResult } from '../../../tasks/domain/value-objects/task-result.vo';
 
 @Injectable()
 export class OrchestratorAgentsService {
@@ -53,21 +55,30 @@ export class OrchestratorAgentsService {
 
       // d) Ejecutar Tool si corresponde
       if (action.toolName) {
-        const result = await this.toolsService.execute(action.toolName, action.params);
-        // Guardar resultado en memoria
-        await this.memoryRepository.save({
-          id: `memo-${Date.now()}`,
-          content: `Tool used: ${action.toolName} - result: ${JSON.stringify(result)}`,
-          metadata: { agentId, taskId },
+        const result = await this.toolsService.executeTool(action.toolName, action.params);
+        const timestamp = new Date();
+      
+        // Crear instancia de MemoryEntry con los campos requeridos
+        const memoryEntry = MemoryEntry.create(
+          `memo-${Date.now()}`,
+          `Tool used: ${action.toolName} - result: ${JSON.stringify(result)}`,
+          { timestamp },
           agentId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+          undefined // Embedding opcional
+        );
+      
+        // Guardar resultado en memoria
+        await this.memoryRepository.save(memoryEntry);
       }
+      
+        // source?: string;
+        // timestamp: Date;
+        // context?: Record<string, any>;
+        // tags?: string[];
 
       // e) Si la acción implica completar la tarea
       if (action.type === 'complete') {
-        await this.tasksService.completeTask(taskId, { result: 'Completed by agent' });
+        await this.tasksService.completeTask(taskId, TaskResult.createSuccess('Task completed', {}));
         done = true;
       }
 
