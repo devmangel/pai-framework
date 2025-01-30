@@ -5,6 +5,8 @@ import { LLMModule } from './modules/llm/llm.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { MemoryModule } from './modules/memory/memory.module';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+
 
 @Module({
   imports: [
@@ -23,6 +25,11 @@ import { MemoryModule } from './modules/memory/memory.module';
         presencePenalty: 0,
         timeout: 30000,
       },
+    }),
+    RabbitMQModule.forRoot({
+      exchanges: [{ name: 'tasks', type: 'topic' }],
+      uri: 'amqp://localhost:5672',
+      // otras opciones
     }),
   ],
 })

@@ -16,6 +16,7 @@ export interface AgentsService {
   startTask(agentId: string, taskId: string): Promise<void>;
   completeTask(agentId: string, taskId: string, result: TaskResult): Promise<void>;
   failTask(agentId: string, taskId: string, error: string): Promise<void>;
+  findAgentById(id: string): Promise<Agent>;
   // Additional methods as needed
 }
 
@@ -67,6 +68,10 @@ export class AgentsServiceImpl implements AgentsService {
     const agent = await this.agentRepository.findById(new AgentId(agentId));
     if (!agent) throw new AgentNotFoundError(agentId);
     await this.taskService.failTask(taskId, error);
+  }
+
+  async findAgentById(id: string): Promise<Agent> {
+    return this.agentRepository.findById(new AgentId(id));
   }
 
   // Additional methods as needed
