@@ -1,353 +1,113 @@
-# Módulo de Agentes
+# Agents Module
 
-## Descripción General
-El módulo de Agentes es un componente central del framework AgentsAI que gestiona agentes de IA autónomos. Cada agente es una entidad independiente con roles específicos, capacidades y objetivos, diseñado para trabajar de forma individual o como parte de un equipo.
+## Overview
 
-## Estructura del Módulo
-```
-src/modules/agents/
-├── domain/
-│   ├── entities/
-│   │   └── agent.entity.ts
-│   ├── value-objects/
-│   │   ├── agent-role.vo.ts
-│   │   ├── agent-capability.vo.ts
-│   │   └── agent-id.vo.ts
-│   └── ports/
-│       └── agent.repository.ts
-├── application/
-│   ├── use-cases/
-│   │   └── create-agent.use-case.ts
-│   └── dtos/
-├── infrastructure/
-│   └── persistence/
-│       └── dynamodb/
-└── interface/
-    └── http/
-```
+The Agents module is responsible for managing agents within the system. It includes functionalities for creating, updating, deleting, and querying agents, as well as assigning tasks to them.
 
-## Componentes Principales
+## Structure
 
-### 1. Entidad Agente (Agent)
+The module is structured as follows:
 
-La entidad principal del módulo con las siguientes características:
+- `agents.module.ts`: Defines the Agents module and its dependencies.
+- `application/`: Contains the application layer, including services and use cases.
+  - `services/agent-application.service.ts`: Implements the `AgentsService` interface, providing methods to manage agents.
+  - `use-cases/create-agent.use-case.ts`: Defines the use case for creating an agent.
+- `domain/`: Contains the domain layer, including entities, value objects, and repository interfaces.
+  - `entities/agent.entity.ts`: Defines the `Agent` entity.
+  - `ports/agent.repository.ts`: Defines the `AgentRepository` interface and related errors.
+- `infrastructure/`: Contains the infrastructure layer, including persistence implementations.
+  - `persistence/dynamodb/agent.repository.ts`: Implements the `AgentRepository` interface using DynamoDB.
+- `interface/`: Contains the interface layer, including HTTP controllers and DTOs.
+  - `http/agents.controller.ts`: Defines the `AgentsController` for handling HTTP requests.
+  - `http/dtos/agent-response.dto.ts`: Defines DTOs for agent responses.
+  - `http/dtos/create-agent.dto.ts`: Defines the DTO for creating an agent.
 
-#### Propiedades
-- `id`: Identificador único
-- `name`: Nombre del agente
-- `role`: Rol asignado
-- `capabilities`: Capacidades
-- `description`: Descripción
-- `goals`: Objetivos
-- `memory`: Estado persistente
+## Components
 
-#### Métodos Principales
-```typescript
-// Creación
-static create(name, role, capabilities, description, goals)
+### Agents Module
 
-// Actualización
-updateName(name)
-updateRole(role)
-updateDescription(description)
-updateGoals(goals)
-updateMemory(key, value)
+The `AgentsModule` is defined in `agents.module.ts` and includes the following components:
 
-// Gestión de Capacidades
-addCapability(capability)
-removeCapability(capability)
-```
+- `AgentsController`: Handles HTTP requests related to agents.
+- `DynamoDBAgentRepository`: Implements the `AgentRepository` interface using DynamoDB.
+- `CreateAgentUseCase`: Provides the use case for creating an agent.
+- `AgentRepository`: Interface for the agent repository.
+- `ConfigService`: Provides configuration settings for AWS and DynamoDB.
 
-### 2. Roles de Agente
+### Services
 
-#### Tipos de Roles
-1. **Coordinador**
-   - Gestión de actividades del equipo
-   - Distribución de tareas
-   - Monitoreo de progreso
-   - Optimización de rendimiento
+#### AgentsService
 
-2. **Investigador**
-   - Recopilación de información
-   - Análisis de datos
-   - Generación de informes
-   - Identificación de patrones
+The `AgentsService` interface defines the following methods:
 
-3. **Ejecutor**
-   - Implementación de soluciones
-   - Seguimiento de procedimientos
-   - Reporte de resultados
-   - Manejo de herramientas
+- `createAgent(dto: CreateAgentDto): Promise<Agent>`
+- `updateAgent(id: string, dto: UpdateAgentDto): Promise<Agent>`
+- `deleteAgent(id: string): Promise<void>`
+- `assignTask(agentId: string, taskId: string): Promise<void>`
+- `startTask(agentId: string, taskId: string): Promise<void>`
+- `completeTask(agentId: string, taskId: string, result: TaskResult): Promise<void>`
+- `failTask(agentId: string, taskId: string, error: string): Promise<void>`
 
-4. **Validador**
-   - Revisión de resultados
-   - Control de calidad
-   - Retroalimentación
-   - Documentación
+#### AgentsServiceImpl
 
-### 3. Capacidades
+The `AgentsServiceImpl` class implements the `AgentsService` interface and provides the methods to manage agents.
 
-#### Tipos de Capacidades
-```typescript
-enum CapabilityType {
-  TOOL,           // Herramientas
-  SKILL,          // Habilidades
-  INTEGRATION,    // Integraciones
-  COMMUNICATION   // Comunicación
-}
-```
-
-#### Capacidades Predefinidas
-
-1. **Búsqueda Web**
-   - Búsqueda de información
-   - Parámetros: query, maxResults
-   - Tipo: TOOL
-
-2. **Operaciones de Archivo**
-   - Lectura/escritura de archivos
-   - Parámetros: path, operation, content
-   - Tipo: TOOL
-
-3. **Integración API**
-   - Interacción con APIs externas
-   - Parámetros: endpoint, method, body
-   - Tipo: INTEGRATION
-
-4. **Comunicación de Equipo**
-   - Mensajería entre agentes
-   - Parámetros: recipient, message, priority
-   - Tipo: COMMUNICATION
-
-## Uso del Módulo
-
-### Crear un Agente
-```typescript
-const agent = Agent.create(
-  "Asistente de Investigación",
-  AgentRole.RESEARCHER,
-  [CommonCapabilities.WEB_SEARCH],
-  "Agente especializado en investigación",
-  ["Recopilar información precisa", "Generar análisis detallados"]
-);
-```
-
-### Gestionar Capacidades
-```typescript
-// Añadir capacidad
-agent.addCapability(CommonCapabilities.FILE_OPERATION);
-
-// Remover capacidad
-agent.removeCapability(CommonCapabilities.WEB_SEARCH);
-```
-
-### Actualizar Estado
-```typescript
-// Actualizar objetivos
-agent.updateGoals(["Nuevo objetivo 1", "Nuevo objetivo 2"]);
-
-// Gestionar memoria
-agent.updateMemory("lastSearch", "resultado búsqueda");
-```
-
-## Mejores Prácticas
-
-1. **Creación de Agentes**
-   - Usar siempre el método factory `create()`
-   - Definir roles y capacidades claramente
-   - Establecer objetivos específicos
-
-2. **Gestión de Estado**
-   - Mantener la memoria actualizada
-   - Usar getters para acceso seguro
-   - Actualizar timestamps apropiadamente
-
-3. **Validación**
-   - Validar inputs en setters
-   - Verificar tipos de capacidades
-   - Asegurar consistencia de datos
-
-4. **Extensibilidad**
-   - Crear roles personalizados según necesidad
-   - Implementar nuevas capacidades
-   - Mantener la inmutabilidad
-
-## Capa de Aplicación
-
-### Casos de Uso
+### Use Cases
 
 #### CreateAgentUseCase
-Este caso de uso maneja la creación de nuevos agentes en el sistema.
 
-```typescript
-interface CreateAgentDto {
-  name: string;
-  role: {
-    name: string;
-    description: string;
-    responsibilities: string[];
-  };
-  capabilities: Array<{
-    name: string;
-    description: string;
-    type: CapabilityType;
-    parameters: Array<{
-      name: string;
-      type: ParameterType;
-      description?: string;
-      required: boolean;
-      defaultValue?: any;
-    }>;
-  }>;
-  description: string;
-  goals: string[];
-}
-```
+The `CreateAgentUseCase` class provides the use case for creating an agent. It includes the following method:
 
-Proceso de creación:
-1. Validación de datos de entrada
-2. Verificación de duplicados
-3. Creación de objetos de valor (Role, Capabilities)
-4. Persistencia del nuevo agente
+- `execute(dto: CreateAgentDto): Promise<Agent>`
 
-### Servicios de Aplicación
+### Entities
 
-Los servicios de aplicación coordinan las operaciones entre la capa de dominio y la infraestructura:
+#### Agent
 
-1. **Validación**
-   - Verificación de nombres duplicados
-   - Validación de roles y capacidades
-   - Comprobación de consistencia de datos
+The `Agent` entity represents an agent in the system. It includes properties such as `id`, `name`, `role`, `capabilities`, `description`, `goals`, `memory`, `createdAt`, and `updatedAt`.
 
-2. **Transformación de Datos**
-   - Conversión entre DTOs y entidades
-   - Mapeo de datos para la persistencia
-   - Formateo de respuestas
+### Repositories
 
-3. **Coordinación**
-   - Gestión de transacciones
-   - Manejo de eventos del dominio
-   - Orquestación de operaciones complejas
+#### AgentRepository
 
-### Flujo de Datos
-```
-DTO de Entrada -> Validación -> Transformación -> 
-Lógica de Dominio -> Persistencia -> DTO de Salida
-```
+The `AgentRepository` interface defines the methods for interacting with the agent repository. These methods include:
 
-## Persistencia
+- `save(agent: Agent): Promise<void>`
+- `findById(id: AgentId): Promise<Agent | null>`
+- `findAll(): Promise<Agent[]>`
+- `findByName(name: string): Promise<Agent[]>`
+- `update(agent: Agent): Promise<void>`
+- `delete(id: AgentId): Promise<void>`
+- `findByTeamId(teamId: string): Promise<Agent[]>`
+- `findByCapability(capabilityName: string): Promise<Agent[]>`
+- `findByRole(roleName: string): Promise<Agent[]>`
+- `findAvailableAgents(): Promise<Agent[]>`
+- `findBusyAgents(): Promise<Agent[]>`
+- `findByExpertise(expertise: string[]): Promise<Agent[]>`
+- `findByGoals(goals: string[]): Promise<Agent[]>`
+- `saveMany(agents: Agent[]): Promise<void>`
+- `deleteMany(ids: AgentId[]): Promise<void>`
 
-El módulo utiliza DynamoDB como almacenamiento principal, pero está diseñado para ser independiente de la implementación específica:
+### Controllers
 
-### Interfaz del Repositorio
-```typescript
-interface AgentRepository {
-  save(agent: Agent): Promise<void>;
-  findById(id: string): Promise<Agent | null>;
-  findByName(name: string): Promise<Agent[]>;
-  delete(id: string): Promise<void>;
-  exists(id: string): Promise<boolean>;
-}
-```
+#### AgentsController
 
-### Implementación DynamoDB
-- Mapeo entre entidades y estructura de DynamoDB
-- Gestión de índices para búsquedas eficientes
-- Manejo de consistencia eventual
-- Optimización de operaciones de lectura/escritura
+The `AgentsController` class handles HTTP requests related to agents. It includes methods for creating, finding, updating, and deleting agents, as well as querying agents based on teams, capabilities, roles, and status.
 
-## Capa de Interfaz
+### DTOs
 
-### Controladores HTTP
+#### CreateAgentDto
 
-El módulo expone una API RESTful para la gestión de agentes:
+The `CreateAgentDto` class is used to validate and transfer the data needed to create an agent. It includes properties such as `name`, `role`, `capabilities`, `description`, and `goals`.
 
-#### Endpoints Principales
+#### AgentResponseDto
 
-```typescript
-@Controller('agents')
-export class AgentsController {
-  @Post()
-  createAgent(@Body() createAgentDto: CreateAgentDto)
+The `AgentResponseDto` class is used to structure the response for agent-related requests. It includes properties such as `id`, `name`, `role`, `capabilities`, `description`, `goals`, `memory`, `createdAt`, and `updatedAt`.
 
-  @Get()
-  getAllAgents()
+#### AgentListResponseDto
 
-  @Get(':id')
-  getAgentById(@Param('id') id: string)
+The `AgentListResponseDto` class is used to structure the response for a list of agents. It includes properties such as `items` and `total`.
 
-  @Put(':id')
-  updateAgent(
-    @Param('id') id: string,
-    @Body() updateAgentDto: Partial<CreateAgentDto>
-  )
+#### DeleteAgentResponseDto
 
-  @Delete(':id')
-  deleteAgent(@Param('id') id: string)
-
-  @Post(':id/capabilities')
-  addCapability(
-    @Param('id') id: string,
-    @Body() capability: AgentCapability
-  )
-}
-```
-
-### DTOs de Respuesta
-
-```typescript
-interface AgentResponseDto {
-  id: string;
-  name: string;
-  role: {
-    name: string;
-    description: string;
-    responsibilities: string[];
-  };
-  capabilities: Array<{
-    name: string;
-    type: string;
-    description: string;
-    parameters: any[];
-  }>;
-  description: string;
-  goals: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-```
-
-### Manejo de Errores
-
-El módulo implementa filtros de excepción personalizados:
-- Validación de entrada
-- Errores de negocio
-- Errores de persistencia
-- Errores de sistema
-
-## Conclusiones
-
-El módulo de Agentes proporciona una base sólida para la gestión de agentes autónomos con:
-
-### Características Clave
-- Arquitectura limpia y modular
-- Dominio rico y bien definido
-- Persistencia flexible
-- API RESTful completa
-
-### Puntos Fuertes
-1. **Extensibilidad**
-   - Fácil adición de nuevos roles
-   - Capacidades personalizables
-   - Arquitectura pluggable
-
-2. **Mantenibilidad**
-   - Separación clara de responsabilidades
-   - Tests unitarios y de integración
-   - Documentación completa
-
-3. **Escalabilidad**
-   - Diseño orientado a microservicios
-   - Persistencia distribuida
-   - Operaciones asíncronas
-
+The `DeleteAgentResponseDto` class is used to structure the response for deleting an agent. It includes a `message` property.

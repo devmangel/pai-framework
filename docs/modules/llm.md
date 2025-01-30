@@ -1,286 +1,85 @@
-# Módulo LLM (Language Learning Models)
+# LLM Module
 
-## Descripción General
-El módulo LLM es un componente fundamental del framework AgentsAI que gestiona la interacción con diferentes proveedores de modelos de lenguaje. Proporciona una capa de abstracción unificada para realizar completaciones de texto, gestionar tokens, caché y límites de tasa, permitiendo una integración fluida con diversos proveedores de LLM.
+## Overview
 
-## Estructura del Módulo
-```
-src/modules/llm/
-├── domain/
-│   ├── entities/
-│   │   └── llm-provider.entity.ts
-│   └── ports/
-│       └── llm.service.ts
-├── infrastructure/
-│   └── services/
-│       ├── cache.service.ts
-│       └── openai.service.ts
-└── interface/
-    └── http/
-        ├── llm.controller.ts
-        ├── filters/
-        │   └── llm-exception.filter.ts
-        └── dtos/
-            └── completion.dto.ts
-```
+The LLM (Large Language Model) module is responsible for managing interactions with large language model providers such as OpenAI. It includes functionalities for generating completions, streaming completions, managing cache, and handling provider configurations.
 
-## Componentes Principales
+## Structure
 
-### 1. Proveedor LLM (LLMProvider)
+The module is structured as follows:
 
-La entidad principal que representa un proveedor de servicios LLM:
+- `llm.module.ts`: Defines the LLM module and its dependencies.
+- `domain/`: Contains the domain layer, including entities and service interfaces.
+  - `entities/llm-provider.entity.ts`: Defines the `LLMProvider` entity.
+  - `ports/llm.service.ts`: Defines the `LLMService` interface and related errors.
+- `infrastructure/`: Contains the infrastructure layer, including service implementations.
+  - `services/openai.service.ts`: Implements the `LLMService` interface using OpenAI.
+  - `services/cache.service.ts`: Provides caching functionalities for LLM responses.
+- `interface/`: Contains the interface layer, including HTTP controllers and DTOs.
+  - `http/llm.controller.ts`: Defines the `LLMController` for handling HTTP requests.
+  - `http/dtos/completion.dto.ts`: Defines DTOs for completion requests and responses.
 
-#### Tipos de Proveedores
-```typescript
-enum LLMProviderType {
-  OPENAI = 'OPENAI',
-  ANTHROPIC = 'ANTHROPIC',
-  CUSTOM = 'CUSTOM'
-}
-```
+## Components
 
-#### Configuración
-```typescript
-interface LLMConfig {
-  maxTokens?: number;
-  temperature?: number;
-  topP?: number;
-  frequencyPenalty?: number;
-  presencePenalty?: number;
-  stop?: string[];
-  timeout?: number;
-}
-```
+### LLM Module
 
-#### Métodos Factory
-```typescript
-// Crear proveedor OpenAI
-static createOpenAI(apiKey: string, config?: Partial<LLMConfig>)
+The `LLMModule` is defined in `llm.module.ts` and includes the following components:
 
-// Crear proveedor Anthropic
-static createAnthropic(apiKey: string, config?: Partial<LLMConfig>)
+- `LLMController`: Handles HTTP requests related to LLM.
+- `OpenAIService`: Implements the `LLMService` interface using OpenAI.
+- `LLMCacheService`: Provides caching functionalities for LLM responses.
+- `ConfigModule`: Provides configuration settings.
+- `CacheModule`: Provides caching capabilities.
 
-// Crear proveedor personalizado
-static createCustom(
-  id: string,
-  apiKey: string,
-  baseUrl: string,
-  models: string[],
-  defaultModel: string,
-  config?: Partial<LLMConfig>
-)
-```
+### Services
 
-### 2. Servicio LLM
+#### LLMService
 
-Interface principal que define las operaciones disponibles:
+The `LLMService` interface defines the following methods:
 
-#### Operaciones Principales
-```typescript
-interface LLMService {
-  // Completación de texto
-  complete(request: CompletionRequest): Promise<LLMResponse>;
-  
-  // Completación streaming
-  completeStreaming(
-    request: CompletionRequest, 
-    callbacks: StreamingCallbacks
-  ): Promise<void>;
-  
-  // Gestión de proveedores
-  getProvider(): LLMProvider;
-  getAvailableModels(): Promise<string[]>;
-  validateProvider(): Promise<boolean>;
-  
-  // Utilidades
-  getRateLimitStatus(): Promise<{
-    remaining: number;
-    reset: Date;
-    limit: number;
-  }>;
-  countTokens(text: string): Promise<number>;
-  calculateCost(tokens: number, model: string): number;
-}
-```
+- `complete(request: CompletionRequest): Promise<LLMResponse>`
+- `completeStreaming(request: CompletionRequest, callbacks: StreamingCallbacks): Promise<void>`
+- `getProvider(): LLMProvider`
+- `getAvailableModels(): Promise<string[]>`
+- `validateProvider(): Promise<boolean>`
+- `getRateLimitStatus(): Promise<{ remaining: number; reset: Date; limit: number }>`
+- `countTokens(text: string): Promise<number>`
+- `calculateCost(tokens: number, model: string): number`
 
-#### Tipos de Mensajes
-```typescript
-interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+#### OpenAIService
 
-interface CompletionRequest {
-  messages: Message[];
-  config?: Partial<LLMConfig>;
-  model?: string;
-}
-```
+The `OpenAIService` class implements the `LLMService` interface and provides methods to interact with the OpenAI API.
 
-### 3. Sistema de Caché
+#### LLMCacheService
 
-Implementación de caché para optimizar respuestas:
+The `LLMCacheService` class provides caching functionalities for LLM responses.
 
-#### Funcionalidades
-```typescript
-class LLMCacheService {
-  // Obtener respuesta cacheada
-  getCachedResponse(prompt: string, model: string): Promise<string | null>;
-  
-  // Almacenar respuesta en caché
-  cacheResponse(prompt: string, model: string, response: string): Promise<void>;
-  
-  // Invalidar caché
-  invalidateCache(prompt: string, model: string): Promise<void>;
-}
-```
+### Entities
 
-### 4. Manejo de Errores
+#### LLMProvider
 
-Jerarquía de errores específicos del módulo:
+The `LLMProvider` entity represents a provider of large language models. It includes properties such as `id`, `type`, `apiKey`, `defaultConfig`, `models`, `defaultModel`, and `baseUrl`.
 
-```typescript
-// Error base
-class LLMServiceError extends Error {
-  code: string;
-  provider: string;
-  model?: string;
-}
+### Controllers
 
-// Errores específicos
-class RateLimitError extends LLMServiceError
-class TokenLimitError extends LLMServiceError
-class InvalidRequestError extends LLMServiceError
-class ProviderError extends LLMServiceError
-class TimeoutError extends LLMServiceError
-```
+#### LLMController
 
-## API REST
+The `LLMController` class handles HTTP requests related to LLM. It includes methods for generating completions, getting available models, getting provider status, counting tokens, and estimating costs.
 
-### Endpoints Disponibles
+### DTOs
 
-#### 1. Completación de Texto
-```http
-POST /llm/complete
-Content-Type: application/json
+#### CompletionRequestDto
 
-{
-  "messages": [
-    {
-      "role": "user",
-      "content": "¿Cuál es la capital de Francia?"
-    }
-  ],
-  "config": {
-    "temperature": 0.7,
-    "maxTokens": 100
-  },
-  "model": "gpt-4"
-}
-```
+The `CompletionRequestDto` class is used to validate and transfer the data needed to generate a completion. It includes properties such as `messages`, `config`, and `model`.
 
-#### 2. Obtener Modelos Disponibles
-```http
-GET /llm/models
-```
+#### TokenCountResponseDto
 
-#### 3. Estado del Proveedor
-```http
-GET /llm/provider/status
-```
+The `TokenCountResponseDto` class is used to structure the response for token count requests. It includes a `count` property.
 
-#### 4. Conteo de Tokens
-```http
-GET /llm/tokens/count?text=texto_a_contar
-```
+#### CostEstimateResponseDto
 
-#### 5. Estimación de Costos
-```http
-GET /llm/cost/estimate?tokens=1000&model=gpt-4
-```
+The `CostEstimateResponseDto` class is used to structure the response for cost estimate requests. It includes `cost` and `currency` properties.
 
-## Mejores Prácticas
+#### ProviderStatusResponseDto
 
-### 1. Configuración de Proveedores
-- Utilizar valores de configuración apropiados según el caso de uso
-- Implementar fallbacks entre proveedores
-- Mantener las claves API seguras
-
-```typescript
-const provider = LLMProvider.createOpenAI(apiKey, {
-  temperature: 0.7,
-  maxTokens: 2048,
-  timeout: 30000
-});
-```
-
-### 2. Gestión de Caché
-- Utilizar caché para respuestas frecuentes
-- Implementar TTL apropiado
-- Invalidar caché cuando sea necesario
-
-```typescript
-// Verificar caché antes de llamar al API
-const cachedResponse = await cacheService.getCachedResponse(prompt, model);
-if (cachedResponse) {
-  return cachedResponse;
-}
-```
-
-### 3. Control de Costos
-- Monitorear uso de tokens
-- Implementar límites de presupuesto
-- Utilizar modelos apropiados según necesidad
-
-```typescript
-// Estimar costo antes de procesar
-const tokenCount = await llmService.countTokens(text);
-const cost = llmService.calculateCost(tokenCount, model);
-if (cost > maxBudget) {
-  throw new Error('Excede presupuesto máximo');
-}
-```
-
-### 4. Manejo de Errores
-- Implementar reintentos con backoff
-- Manejar límites de tasa
-- Logging apropiado
-
-```typescript
-try {
-  const response = await llmService.complete(request);
-} catch (error) {
-  if (error instanceof RateLimitError) {
-    // Esperar y reintentar
-    await delay(error.resetDate.getTime() - Date.now());
-    return await llmService.complete(request);
-  }
-  // Manejar otros errores
-}
-```
-
-## Conclusiones
-
-El módulo LLM proporciona una base robusta para la integración con modelos de lenguaje:
-
-### Características Clave
-- Abstracción unificada de proveedores
-- Sistema de caché eficiente
-- Gestión de costos y límites
-- API REST completa
-
-### Puntos Fuertes
-1. **Flexibilidad**
-   - Soporte multi-proveedor
-   - Configuración personalizable
-   - Extensible para nuevos proveedores
-
-2. **Rendimiento**
-   - Sistema de caché integrado
-   - Streaming de respuestas
-   - Control de límites de tasa
-
-3. **Mantenibilidad**
-   - Arquitectura limpia
-   - Errores tipados
-   - Documentación completa
+The `ProviderStatusResponseDto` class is used to structure the response for provider status requests. It includes `isValid`, `provider`, and `rateLimit` properties.
