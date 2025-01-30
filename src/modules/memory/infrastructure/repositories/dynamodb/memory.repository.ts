@@ -31,7 +31,7 @@ export class DynamoDBMemoryRepository implements MemoryRepository {
       await this.dynamoDBClient.send(
         new PutItemCommand({
           TableName: this.tableName,
-          Item: marshall(item),
+          Item: marshall(item, { convertClassInstanceToMap: true }),
           ConditionExpression: 'attribute_not_exists(id)',
         })
       );
@@ -60,10 +60,10 @@ export class DynamoDBMemoryRepository implements MemoryRepository {
       await this.dynamoDBClient.send(
         new UpdateItemCommand({
           TableName: this.tableName,
-          Key: marshall({ id }),
+          Key: marshall({ id }, { convertClassInstanceToMap: true }),
           UpdateExpression: `SET ${updateExpressions.join(', ')}`,
           ExpressionAttributeNames: expressionAttributeNames,
-          ExpressionAttributeValues: marshall(expressionAttributeValues),
+          ExpressionAttributeValues: marshall(expressionAttributeValues, { convertClassInstanceToMap: true }),
           ConditionExpression: 'attribute_exists(id)',
         })
       );
@@ -110,9 +110,9 @@ export class DynamoDBMemoryRepository implements MemoryRepository {
         ExpressionAttributeNames: {
           '#type': 'type',
         },
-        ExpressionAttributeValues: marshall({
+          ExpressionAttributeValues: marshall({
           ':type': type,
-        }),
+        }, { convertClassInstanceToMap: true }),
       })
     );
 
@@ -175,9 +175,9 @@ export class DynamoDBMemoryRepository implements MemoryRepository {
       new ScanCommand({
         TableName: this.tableName,
         FilterExpression: 'contains(content, :content)',
-        ExpressionAttributeValues: marshall({
+          ExpressionAttributeValues: marshall({
           ':content': content,
-        }),
+        }, { convertClassInstanceToMap: true }),
       })
     );
 
@@ -214,7 +214,7 @@ export class DynamoDBMemoryRepository implements MemoryRepository {
       await this.dynamoDBClient.send(
         new UpdateItemCommand({
           TableName: this.tableName,
-          Key: marshall({ id }),
+          Key: marshall({ id }, { convertClassInstanceToMap: true }),
           UpdateExpression: 'SET embedding = :embedding',
           ExpressionAttributeValues: marshall({
             ':embedding': embedding,

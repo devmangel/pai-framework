@@ -56,7 +56,7 @@ describe('TasksController', () => {
 
     await controller.assignTask(taskId, agentId);
 
-    expect(taskService.assignTask).toHaveBeenCalledWith(taskId, { getId: () => agentId });
+    expect(taskService.assignTask).toHaveBeenCalledWith(taskId, agentId);
   });
 
   it('should start a task', async () => {
@@ -65,7 +65,7 @@ describe('TasksController', () => {
 
     await controller.startTask(taskId, agentId);
 
-    expect(taskService.startTask).toHaveBeenCalledWith(taskId, { getId: () => agentId });
+    expect(taskService.startTask).toHaveBeenCalledWith(taskId, agentId);
   });
 
   it('should complete a task', async () => {
