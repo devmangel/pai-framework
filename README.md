@@ -1,211 +1,85 @@
-# AgentsAI Framework
+# AgentsAI Platform
 
-Un framework TypeScript/NestJS para la construcción y gestión de agentes de IA autónomos, inspirado en CrewAI, diseñado para permitir la colaboración, comunicación y ejecución de tareas complejas entre agentes.
+AgentsAI Platform is a modular and scalable system designed to manage and orchestrate intelligent agents, enabling advanced automation, task management, and collaborative workflows. The platform integrates large language models (LLM), long-term memory storage, and real-time orchestration to facilitate sophisticated multi-agent applications.
 
-## Estado del Proyecto
+## Características Principales
 
-El proyecto implementa una arquitectura hexagonal robusta con los siguientes módulos principales:
+- **Arquitectura Modular:** Organizada en módulos independientes para Agentes, LLM, Memoria, Orquestación, Tareas, Equipos y Herramientas.
+- **Integración con LLM:** Utiliza modelos de OpenAI (y potencialmente otros) para procesamiento de lenguaje natural y generación de contenido.
+- **Persistencia en DynamoDB:** Almacena datos de manera eficiente usando AWS DynamoDB.
+- **Orquestación Avanzada:** Controla y coordina flujos de trabajo entre agentes y equipos, utilizando patrones CQRS y consumiendo mensajes de RabbitMQ.
+- **Sistema de Memoria:** Permite la gestión de datos históricos y de contexto para un razonamiento prolongado.
+- **Gestión de Tareas y Equipos:** Facilita la asignación, seguimiento y colaboración en tareas, así como la organización de equipos colaborativos.
+- **Herramientas Extendidas:** Proporciona funcionalidades adicionales a través de herramientas especializadas.
 
-### Módulos Implementados ✅
+## Módulos de la Plataforma
 
-- **Agents**: Sistema base de agentes con persistencia en DynamoDB
-- **LLM**: Integración con proveedores de LLM (OpenAI) y sistema de caché
-- **Tasks**: Gestión de tareas, dependencias y flujos de trabajo
-- **Teams**: Colaboración y comunicación entre agentes
-- **Tools**: Sistema extensible de herramientas con caché integrado
+La plataforma se compone de varios módulos, cada uno con su propia documentación detallada:
 
-### En Desarrollo 🚧
-
-- Sistema de memoria para agentes
-- Integración con más proveedores LLM
-- Sistema de plugins
-- WebSocket para comunicación en tiempo real
-- Integración con WhatsApp
-- Documentación OpenAPI
-
-## Arquitectura
-
-El proyecto sigue una arquitectura hexagonal (ports and adapters) con una clara separación de responsabilidades:
-
-```
-src/
-├── modules/
-│   ├── agents/              # Gestión de agentes
-│   │   ├── domain/         # Entidades, value objects y puertos
-│   │   │   ├── entities/   # Agent, AgentConfig
-│   │   │   ├── ports/      # Repositorios e interfaces
-│   │   │   └── vo/         # Value Objects
-│   │   ├── application/    # Casos de uso y servicios
-│   │   ├── infrastructure/ # Implementaciones y servicios externos
-│   │   └── interface/      # Controladores y DTOs
-│   │
-│   ├── llm/                # Integración con modelos de lenguaje
-│   │   ├── domain/        # Abstracciones de LLM
-│   │   ├── infrastructure/# Implementaciones (OpenAI, etc.)
-│   │   └── interface/     # API REST para LLM
-│   │
-│   ├── tasks/              # Gestión de tareas
-│   │   ├── domain/        # Task, TaskStatus, TaskPriority
-│   │   ├── application/   # Workflow, TaskExecution
-│   │   └── infrastructure/# TaskRepository, TaskScheduler
-│   │
-│   ├── teams/              # Coordinación de equipos
-│   │   ├── domain/        # Team, TeamMember, Channel
-│   │   ├── application/   # TeamManagement, Communication
-│   │   └── interface/     # TeamController, WebSocket
-│   │
-│   └── tools/              # Herramientas y capacidades
-│       ├── domain/        # Tool, ToolType
-│       ├── infrastructure/# Implementaciones de tools
-│       └── interface/     # ToolController
-│
-├── common/                 # Utilidades compartidas
-├── config/                 # Gestión de configuración
-└── main.ts                # Punto de entrada
-```
-
-### Patrones de Diseño Implementados
-
-- **Domain-Driven Design**: Entidades ricas y value objects
-- **Repository Pattern**: Abstracción de persistencia
-- **Factory Pattern**: Creación de objetos complejos
-- **Strategy Pattern**: Comportamientos intercambiables
-- **Observer Pattern**: Eventos y notificaciones
-- **Decorator Pattern**: Aspectos transversales
-
-## Documentación
-
-Cada módulo cuenta con documentación detallada:
-
-- [Módulo de Agentes](docs/modules/agents.md)
-- [Módulo LLM](docs/modules/llm.md)
-- [Módulo de Tareas](docs/modules/tasks.md)
-- [Módulo de Equipos](docs/modules/teams.md)
-- [Módulo de Herramientas](docs/modules/tools.md)
+- [Agentes](docs/modules/agents.md) - Gestión y administración de agentes inteligentes.
+- [LLM](docs/modules/llm.md) - Integración con modelos de lenguaje y generación de contenido.
+- [Memoria](docs/modules/memory.md) - Sistema de almacenamiento y recuperación de información a largo plazo.
+- [Orquestación](docs/modules/orchestration.md) - Coordinación de flujos de trabajo y eventos entre módulos.
+- [Tareas](docs/modules/tasks.md) - Gestión y automatización de tareas y procesos.
+- [Equipos](docs/modules/teams.md) - Colaboración y gestión de equipos de agentes.
+- [Herramientas](docs/modules/tools.md) - Funcionalidades extendidas y servicios auxiliares.
 
 ## Requisitos
 
-- Node.js (v18 o superior)
-- npm o yarn
-- DynamoDB Local (desarrollo)
-- Redis (opcional, para caché)
+- **Node.js**: Versión 18 o superior.
+- **AWS DynamoDB**: Configurado para almacenamiento de datos.
+- **Cuenta de OpenAI**: Para integración con modelos de lenguaje.
+- **RabbitMQ**: Para manejo de eventos y orquestación (opcional, según despliegue).
+- **Docker**: Recomendado para despliegue y testing de contenedores.
 
-## Configuración
+## Instalación y Configuración
 
-1. Clonar el repositorio:
+1. **Clonar el repositorio:**
    ```bash
    git clone <repository-url>
-   cd agentsAI
+   cd agents/agentsAI
    ```
 
-2. Instalar dependencias:
+2. **Instalar dependencias:**
    ```bash
    npm install
    ```
 
-3. Configurar variables de entorno:
-   ```bash
-   cp .env.example .env
-   # Editar .env con tu configuración
-   ```
+3. **Configurar variables de entorno:**
+   - Revisa el archivo `.env.example` y configura un archivo `.env` con las credenciales para AWS, OpenAI y otros servicios necesarios.
 
-4. Iniciar DynamoDB Local:
+4. **Compilar el proyecto:**
    ```bash
-   docker run -p 8000:8000 amazon/dynamodb-local
-   ```
-
-5. Ejecutar la aplicación:
-   ```bash
-   # Desarrollo
-   npm run start:dev
-
-   # Producción
    npm run build
-   npm run start:prod
    ```
 
-## Desarrollo
+5. **Iniciar la aplicación:**
+   ```bash
+   npm run start
+   ```
 
-### Estándares de Código
+## Uso Básico
 
-- Seguir las mejores prácticas de NestJS
-- Implementar arquitectura hexagonal
-- Escribir pruebas unitarias para lógica de dominio
-- Documentar APIs públicas
+Una vez iniciada la aplicación, puedes acceder a los endpoints HTTP para interactuar con los diferentes módulos, por ejemplo:
 
-### Testing
+- **Agentes:** Utiliza los endpoints definidos en el módulo de Agentes para crear y gestionar agentes.
+- **Tareas:** Crea y asigna tareas utilizando el módulo de Tareas.
+- **Orquestación:** Monitorea y coordina flujos de trabajo entre agentes y equipos.
+- **LLM:** Envía solicitudes de completación a la API de OpenAI u otros modelos.
+- **Memoria:** Consulta y almacena información histórica relevante.
+- **Equipos y Herramientas:** Gestiona equipos y utiliza herramientas extendidas disponibles.
 
-```bash
-# Pruebas unitarias
-npm run test
+Consulta la documentación de cada módulo (en el directorio `docs/modules/`) para obtener detalles específicos y ejemplos de uso.
 
-# Pruebas E2E
-npm run test:e2e
+## Contribución
 
-# Cobertura
-npm run test:cov
-```
-
-## Variables de Entorno
-
-```env
-# Server
-PORT=3000
-NODE_ENV=development
-
-# Database
-DYNAMODB_ENDPOINT=http://localhost:8000
-AWS_REGION=us-west-2
-AWS_ACCESS_KEY_ID=local
-AWS_SECRET_ACCESS_KEY=local
-
-# LLM
-OPENAI_API_KEY=your-api-key
-DEFAULT_MODEL=gpt-4
-CACHE_TTL=3600
-
-# Redis (opcional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
-
-## Próximos Pasos
-
-### Fase 1: Mejoras Core
-- [ ] Sistema de memoria para agentes
-- [ ] Integración con Claude y Gemini
-- [ ] Sistema de plugins extensible
-
-### Fase 2: Comunicación
-- [ ] WebSocket para tiempo real
-- [ ] Integración con WhatsApp
-- [ ] Sistema de notificaciones
-
-### Fase 3: Documentación y Tooling
-- [ ] Documentación OpenAPI completa
-- [ ] CLI para gestión de agentes
-- [ ] Dashboard de administración
-
-### Fase 4: Escalabilidad
-- [ ] Soporte para múltiples bases de datos
-- [ ] Sistema de colas distribuido
-- [ ] Monitoreo y telemetría
-
-## Contribuir
-
-1. Fork del repositorio
-2. Crear rama de feature
-3. Commit de cambios
-4. Push a la rama
-5. Crear Pull Request
-
-### Guía de Contribución
-
-- Seguir estilo de código establecido
-- Incluir pruebas para nueva funcionalidad
-- Actualizar documentación relevante
-- Referenciar issues relacionados
+Si deseas contribuir a este proyecto, por favor sigue estos pasos:
+1. Forkea el repositorio.
+2. Crea tu rama de características (`git checkout -b feature/nueva-caracteristica`).
+3. Realiza tus cambios y haz commit (`git commit -am 'Agrega nueva característica'`).
+4. Push a la rama (`git push origin feature/nueva-caracteristica`).
+5. Abre un Pull Request.
 
 ## Licencia
 
-[MIT License](LICENSE)
+Este proyecto está licenciado bajo la [Licencia MIT](LICENSE).
