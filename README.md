@@ -36,8 +36,8 @@ La plataforma se compone de varios m√≥dulos, cada uno con su propia documentaci√
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone <repository-url>
-   cd agents/agentsAI
+   git clone <https://github.com/devmangel/pai-framework.git>
+   cd pai-framework
    ```
 
 2. **Instalar dependencias:**
