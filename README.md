@@ -1,6 +1,6 @@
-# AgentsAI Platform
+# AgentsAI Framework
 
-AgentsAI Platform is a modular and scalable system designed to manage and orchestrate intelligent agents, enabling advanced automation, task management, and collaborative workflows. The platform integrates large language models (LLM), long-term memory storage, and real-time orchestration to facilitate sophisticated multi-agent applications.
+AgentsAI Framework is a modular and scalable system designed to manage and orchestrate intelligent agents, enabling advanced automation, task management, and collaborative workflows. The Framework integrates large language models (LLM), long-term memory storage, and real-time orchestration to facilitate sophisticated multi-agent applications.
 
 ## Características Principales
 
