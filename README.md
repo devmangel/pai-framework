@@ -1,6 +1,6 @@
 # AgentsAI Framework
 
-AgentsAI Framework is a modular and scalable system designed to manage and orchestrate intelligent agents, enabling advanced automation, task management, and collaborative workflows. The Framework integrates large language models (LLM), long-term memory storage, and real-time orchestration to facilitate sophisticated multi-agent applications.
+El AgentsAI Framework es un sistema modular y escalable diseñado para gestionar y orquestar agentes inteligentes, permitiendo una automatización avanzada, gestión de tareas y flujos de trabajo colaborativos. El framework integra modelos de lenguaje de gran tamaño (LLM), almacenamiento de memoria a largo plazo y orquestación en tiempo real para facilitar aplicaciones sofisticadas de múltiples agentes.
 
 ## Características Principales
 
